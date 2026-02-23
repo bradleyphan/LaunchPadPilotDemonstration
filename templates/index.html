@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Launchpad Pilot</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0f62fe;
+      --primary-dark: #0043ce;
+      --accent: #6929c4;
+      --success: #24a148;
+      --bg-dark: #0a0e1a;
+      --bg-card: #111827;
+      --bg-card-2: #1a2235;
+      --border: rgba(255,255,255,0.08);
+      --text-muted: #8b9cbf;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+    .navbar-brand {
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: #fff !important;
+      letter-spacing: -0.5px;
+    }
+    .navbar-brand span { color: var(--primary); }
+    .nav-badge {
+      font-size: 0.65rem;
+      background: var(--primary);
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-weight: 600;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 5rem 0 4rem;
+      text-align: center;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -120px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 500px;
+      background: radial-gradient(ellipse at center, rgba(15,98,254,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--primary);
+      background: rgba(15,98,254,0.1);
+      border: 1px solid rgba(15,98,254,0.25);
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      color: #fff;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, #0f62fe 0%, #6929c4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p.lead {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 560px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+      font-weight: 400;
+    }
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .stat-item { text-align: center; }
+    .stat-item .stat-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #fff;
+      display: block;
+    }
+    .stat-item .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Cards ── */
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+    }
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.4rem;
+    }
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.5px;
+    }
+    .section-sub {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.75rem;
+    }
+
+    /* ── Form ── */
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #c9d6ef;
+      letter-spacing: 0.3px;
+      margin-bottom: 0.4rem;
+    }
+    .form-control {
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 0.65rem 1rem;
+      font-size: 0.92rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus {
+      background: var(--bg-card-2);
+      border-color: var(--primary);
+      color: #e2e8f0;
+      box-shadow: 0 0 0 3px rgba(15,98,254,0.18);
+    }
+    .form-control::placeholder { color: #4a5a7a; }
+    .input-group-text {
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 10px 0 0 10px;
+      font-size: 0.9rem;
+    }
+    .input-group .form-control { border-radius: 0 10px 10px 0; }
+
+    .btn-primary-custom {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem 1.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #fff;
+      width: 100%;
+      transition: opacity 0.2s, transform 0.15s;
+      letter-spacing: 0.2px;
+    }
+    .btn-primary-custom:hover { opacity: 0.88; transform: translateY(-1px); color: #fff; }
+    .btn-primary-custom:active { transform: translateY(0); }
+    .btn-primary-custom:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── Alert ── */
+    #alert-box {
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: none;
+      padding: 0.75rem 1rem;
+    }
+    #alert-box.show { display: block; }
+    .alert-success-custom {
+      background: rgba(36,161,72,0.12);
+      border: 1px solid rgba(36,161,72,0.3);
+      color: #4ade80;
+    }
+    .alert-danger-custom {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #f87171;
+    }
+
+    /* ── Table ── */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .table {
+      margin-bottom: 0;
+      font-size: 0.875rem;
+    }
+    .table thead tr {
+      background: rgba(15,98,254,0.08);
+      border-bottom: 1px solid var(--border);
+    }
+    .table thead th {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 0.85rem 1.1rem;
+      border: none;
+      white-space: nowrap;
+    }
+    .table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .table tbody tr:last-child { border-bottom: none; }
+    .table tbody tr:hover { background: rgba(255,255,255,0.03); }
+    .table td {
+      color: #cbd5e1;
+      padding: 0.85rem 1.1rem;
+      border: none;
+      vertical-align: middle;
+    }
+    .table td.name-cell {
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+    .badge-ratio {
+      font-size: 0.72rem;
+      padding: 4px 9px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .badge-good { background: rgba(36,161,72,0.15); color: #4ade80; }
+    .badge-warn { background: rgba(251,191,36,0.12); color: #fbbf24; }
+    .badge-high { background: rgba(239,68,68,0.12); color: #f87171; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+    .empty-state i { font-size: 2.5rem; opacity: 0.3; margin-bottom: 0.75rem; display: block; }
+    .empty-state p { font-size: 0.875rem; margin: 0; }
+
+    /* ── Spinner ── */
+    .spinner-border-sm { width: 1rem; height: 1rem; border-width: 0.15em; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 0;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 576px) {
+      .hero { padding: 3rem 0 2rem; }
+      .hero-stats { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--primary)"></i>
+        Launchpad<span>Pilot</span>
+        <span class="nav-badge">BETA</span>
+      </a>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge" style="background:rgba(36,161,72,0.15);color:#4ade80;font-size:0.7rem;padding:5px 10px;border-radius:20px;">
+          <i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Live
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow">
+        <i class="bi bi-mortarboard-fill"></i>
+        CS4800 · Assignment 2
+      </div>
+      <h1>
+        Your Financial<br/>
+        <span class="gradient-text">Launchpad</span>
+      </h1>
+      <p class="lead">
+        Bridge the gap between graduation and financial clarity.
+        Submit your loan and salary data to understand your debt-to-income ratio
+        and plan your transition to professional life.
+      </p>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-value" id="total-profiles">—</span>
+          <span class="stat-label">Profiles Submitted</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="avg-salary">—</span>
+          <span class="stat-label">Avg. Starting Salary</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="avg-loan">—</span>
+          <span class="stat-label">Avg. Loan Balance</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="container pb-5">
+    <div class="row g-4 justify-content-center">
+
+      <!-- Submit Form -->
+      <div class="col-lg-4 col-md-5">
+        <div class="glass-card h-100">
+          <p class="section-label">New Profile</p>
+          <h2 class="section-title">Submit Your Data</h2>
+          <p class="section-sub">All fields are required. Data is stored securely in MongoDB Atlas.</p>
+
+          <div id="alert-box" role="alert"></div>
+
+          <form id="profile-form" novalidate>
+            <div class="mb-3">
+              <label class="form-label" for="name">
+                <i class="bi bi-person me-1"></i>Full Name
+              </label>
+              <input type="text" class="form-control" id="name"
+                     placeholder="e.g. Jordan Smith" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="loan_balance">
+                <i class="bi bi-bank me-1"></i>Student Loan Balance
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control" id="loan_balance"
+                       placeholder="e.g. 9000" min="0" step="0.01" required />
+              </div>
+            </div>
+            <div class="mb-4">
+              <label class="form-label" for="starting_salary">
+                <i class="bi bi-briefcase me-1"></i>Expected Starting Salary
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control" id="starting_salary"
+                       placeholder="e.g. 65000" min="1" step="0.01" required />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary-custom" id="submit-btn">
+              <span id="btn-text"><i class="bi bi-send-fill me-2"></i>Submit Profile</span>
+              <span id="btn-spinner" class="d-none">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Saving...
+              </span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Profiles Table -->
+      <div class="col-lg-8 col-md-7">
+        <div class="glass-card">
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <div>
+              <p class="section-label mb-0">Database</p>
+              <h2 class="section-title mb-0">All Profiles</h2>
+            </div>
+            <button class="btn btn-sm" id="refresh-btn"
+              style="background:rgba(15,98,254,0.1);border:1px solid rgba(15,98,254,0.25);color:var(--primary);border-radius:8px;font-size:0.78rem;font-weight:600;padding:5px 12px;">
+              <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+          </div>
+          <p class="section-sub">Sorted by most recently submitted. DTI = Debt-to-Income Ratio.</p>
+
+          <div class="table-wrapper">
+            <table class="table" id="profiles-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Loan Balance</th>
+                  <th>Starting Salary</th>
+                  <th>DTI Ratio</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody id="profiles-tbody">
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <i class="bi bi-database-slash"></i>
+                      <p>Loading profiles…</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <span>The Launchpad Pilot &mdash; CS4800 Assignment 2 &middot; Built with Flask + MongoDB Atlas</span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const tbody = document.getElementById('profiles-tbody');
+    const form  = document.getElementById('profile-form');
+    const alertBox   = document.getElementById('alert-box');
+    const submitBtn  = document.getElementById('submit-btn');
+    const btnText    = document.getElementById('btn-text');
+    const btnSpinner = document.getElementById('btn-spinner');
+
+    function formatCurrency(n) {
+      return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso + 'Z');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function ratioBadge(ratio) {
+      if (ratio === null || ratio === undefined) return '<span class="badge-ratio badge-warn">N/A</span>';
+      const cls = ratio < 0.3 ? 'badge-good' : ratio < 0.6 ? 'badge-warn' : 'badge-high';
+      return `<span class="badge-ratio ${cls}">${ratio.toFixed(2)}x</span>`;
+    }
+
+    function showAlert(msg, type) {
+      alertBox.textContent = msg;
+      alertBox.className = `show ${type === 'success' ? 'alert-success-custom' : 'alert-danger-custom'}`;
+      setTimeout(() => { alertBox.className = ''; }, 4000);
+    }
+
+    async function loadProfiles() {
+      try {
+        const res = await fetch('/get_profiles');
+        const profiles = await res.json();
+
+        if (!Array.isArray(profiles) || profiles.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+            <i class="bi bi-inbox"></i><p>No profiles yet. Be the first to submit!</p></div></td></tr>`;
+          document.getElementById('total-profiles').textContent = '0';
+          document.getElementById('avg-salary').textContent = '—';
+          document.getElementById('avg-loan').textContent = '—';
+          return;
+        }
+
+        const avgSalary = profiles.reduce((s, p) => s + p.starting_salary, 0) / profiles.length;
+        const avgLoan   = profiles.reduce((s, p) => s + p.loan_balance, 0) / profiles.length;
+        document.getElementById('total-profiles').textContent = profiles.length;
+        document.getElementById('avg-salary').textContent = formatCurrency(avgSalary);
+        document.getElementById('avg-loan').textContent   = formatCurrency(avgLoan);
+
+        tbody.innerHTML = profiles.map((p, i) => `
+          <tr>
+            <td style="color:var(--text-muted);font-size:0.78rem;">${i + 1}</td>
+            <td class="name-cell">${p.name}</td>
+            <td>${formatCurrency(p.loan_balance)}</td>
+            <td>${formatCurrency(p.starting_salary)}</td>
+            <td>${ratioBadge(p.debt_to_income_ratio)}</td>
+            <td style="color:var(--text-muted);font-size:0.8rem;">${formatDate(p.created_at)}</td>
+          </tr>`).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+          <i class="bi bi-exclamation-triangle"></i><p>Failed to load profiles. Is the server running?</p></div></td></tr>`;
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name           = document.getElementById('name').value.trim();
+      const loan_balance   = document.getElementById('loan_balance').value;
+      const starting_salary = document.getElementById('starting_salary').value;
+
+      if (!name || !loan_balance || !starting_salary) {
+        showAlert('Please fill in all fields.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      btnText.classList.add('d-none');
+      btnSpinner.classList.remove('d-none');
+
+      try {
+        const res = await fetch('/add_profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, loan_balance: +loan_balance, starting_salary: +starting_salary })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showAlert('Profile saved successfully!', 'success');
+          form.reset();
+          await loadProfiles();
+        } else {
+          showAlert(data.error || 'Something went wrong.', 'error');
+        }
+      } catch (err) {
+        showAlert('Network error. Please try again.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        btnText.classList.remove('d-none');
+        btnSpinner.classList.add('d-none');
+      }
+    });
+
+    document.getElementById('refresh-btn').addEventListener('click', loadProfiles);
+
+    loadProfiles();
+  </script>
+</body>
+</html>
