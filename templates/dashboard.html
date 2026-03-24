@@ -169,10 +169,19 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
 
     <!-- ── Overview ─────────────────────────────────────────────────────── -->
     <div class="section-panel active" id="panel-overview">
-      <div class="section-header">
-        <h2>Overview</h2>
-        <p>Your key financial metrics and paycheck allocation at a glance.</p>
+      <div class="section-header d-flex justify-content-between align-items-start">
+        <div>
+          <h2>Welcome back, {{ user_name.split()[0] }}.</h2>
+          <p id="overview-date" style="font-size:.82rem;color:var(--muted);margin:0;"></p>
+        </div>
+        <div id="overview-streak" style="display:none;background:var(--ind-light);border:1.5px solid rgba(79,70,229,.2);border-radius:10px;padding:.4rem .85rem;font-size:.75rem;font-weight:700;color:var(--ind);white-space:nowrap;"></div>
       </div>
+
+      <!-- Progress row — only shows after first snapshot -->
+      <div id="overview-progress-row" style="display:none;" class="mb-2">
+        <div class="row g-3" id="overview-progress-cards"></div>
+      </div>
+
       <div class="row g-3 mb-2" id="stat-cards">
         <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Monthly Income</div><div class="stat-value" id="stat-monthly">—</div></div></div>
         <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Loan Balance</div><div class="stat-value" id="stat-loan">—</div></div></div>
@@ -189,10 +198,25 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
           </div>
         </div>
         <div class="col-lg-7">
-          <div class="chart-card h-100">
-            <div class="chart-title">Emergency Fund Target</div>
-            <div class="chart-sub">3 months of expenses as your financial safety net</div>
-            <div class="row g-3 mt-1" id="emergency-cards"></div>
+          <div class="chart-card h-100 d-flex flex-column">
+            <div class="chart-title">Emergency Fund</div>
+            <div class="chart-sub">3 months of expenses — your financial safety net</div>
+            <div id="emergency-progress-wrap" style="display:none;margin-bottom:1rem;">
+              <div class="d-flex justify-content-between mb-1" style="font-size:.75rem;">
+                <span style="color:var(--muted);">Progress</span>
+                <span id="emergency-pct-label" style="color:var(--ind);font-weight:700;"></span>
+              </div>
+              <div style="background:var(--border);border-radius:20px;height:10px;">
+                <div id="emergency-progress-bar" style="background:linear-gradient(90deg,#4F46E5,#059669);border-radius:20px;height:10px;width:0%;transition:width .6s;"></div>
+              </div>
+              <div id="emergency-progress-label" style="font-size:.72rem;color:var(--muted);margin-top:.35rem;"></div>
+            </div>
+            <div class="row g-3" id="emergency-cards"></div>
+            <!-- New user guide -->
+            <div id="overview-quickstart" style="display:none;margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);">
+              <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:.6rem;">Where to start</div>
+              <div class="d-flex flex-column gap-2" id="quickstart-links"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -420,54 +444,126 @@ function showSection(id, btn) {
 
 // ── Overview ─────────────────────────────────────────────────────────────────
 async function loadOverview() {
-  const [profRes, payRes] = await Promise.all([fetch('/api/profile'), fetch('/api/paycheck')]);
-  const prof = await profRes.json();
-  const pay  = await payRes.json();
+  const [profRes, payRes, snapRes] = await Promise.all([
+    fetch('/api/profile'), fetch('/api/paycheck'), fetch('/api/snapshots')
+  ]);
+  const prof  = await profRes.json();
+  const pay   = await payRes.json();
+  const snaps = await snapRes.json();
 
-  const dti = prof.loan_balance / prof.salary;
-  const surplus = pay.monthly - prof.monthly_expenses;
+  // Date greeting
+  document.getElementById('overview-date').textContent =
+    new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Snapshot streak badge
+  if (snaps.length > 0) {
+    document.getElementById('overview-streak').style.display = 'block';
+    document.getElementById('overview-streak').innerHTML =
+      `<i class="bi bi-lightning-charge-fill me-1"></i>${snaps.length} check-in${snaps.length > 1 ? 's' : ''} logged`;
+  }
+
+  // Key stats
+  const dti      = prof.loan_balance / prof.salary;
+  const surplus  = pay.monthly - prof.monthly_expenses;
   const dtiLabel = dti < 0.15 ? 'Excellent' : dti < 0.35 ? 'Manageable' : 'High — act fast';
   const dtiColor = dti < 0.15 ? '#059669' : dti < 0.35 ? '#D97706' : '#DC2626';
 
-  document.getElementById('stat-monthly').textContent  = fmtK(pay.monthly);
-  document.getElementById('stat-loan').textContent     = fmtK(prof.loan_balance);
-  document.getElementById('stat-dti').innerHTML        = `<span style="color:${dtiColor}">${(dti*100).toFixed(0)}%</span>`;
+  document.getElementById('stat-monthly').textContent   = fmtK(pay.monthly);
+  document.getElementById('stat-loan').textContent      = fmtK(prof.loan_balance);
+  document.getElementById('stat-dti').innerHTML         = `<span style="color:${dtiColor}">${(dti*100).toFixed(0)}%</span>`;
   document.getElementById('stat-dti-label').textContent = dtiLabel;
-  document.getElementById('stat-surplus').textContent  = fmtK(Math.max(0, surplus));
+  document.getElementById('stat-surplus').textContent   = fmtK(Math.max(0, surplus));
 
-  // Donut chart
+  // Progress row — only if we have snapshot history
+  if (snaps.length >= 1) {
+    const first = snaps[0], last = snaps[snaps.length - 1];
+    const loanPaid      = Math.max(0, first.loan_balance    - last.loan_balance);
+    const savingsBuilt  = Math.max(0, last.savings_balance  - first.savings_balance);
+    const networthDelta = last.net_worth - first.net_worth;
+    const deltaColor    = networthDelta >= 0 ? '#059669' : '#DC2626';
+    const deltaSign     = networthDelta >= 0 ? '+' : '';
+
+    document.getElementById('overview-progress-row').style.display = 'block';
+    document.getElementById('overview-progress-cards').innerHTML = [
+      ['Loan Paid Off',       fmt(loanPaid),      '#059669', 'arrow-down-circle-fill', 'Since you started'],
+      ['Savings Built',       fmt(savingsBuilt),  '#4F46E5', 'piggy-bank-fill',        'Since you started'],
+      ['Net Worth Change',    `${deltaSign}${fmt(networthDelta)}`, deltaColor, 'graph-up-arrow', `${formatDate(first.date)} → Today`],
+    ].map(([label, val, color, icon, sub]) => `
+      <div class="col-4">
+        <div class="stat-card d-flex align-items-center gap-3" style="padding:.75rem 1rem;">
+          <div style="width:36px;height:36px;border-radius:10px;background:${color}15;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-${icon}" style="color:${color};font-size:1rem;"></i>
+          </div>
+          <div>
+            <div class="stat-label">${label}</div>
+            <div style="font-size:1.2rem;font-weight:800;color:${color};letter-spacing:-.5px;">${val}</div>
+            <div class="stat-sub">${sub}</div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Paycheck donut
   new Chart(document.getElementById('paycheckChart'), {
     type: 'doughnut',
     data: {
       labels: ['Needs (50%)', 'Debt (20%)', 'Retirement (10%)', 'Lifestyle (20%)'],
-      datasets: [{
-        data: [pay.needs, pay.debt, pay.retirement, pay.lifestyle],
-        backgroundColor: ['#4F46E5','#7C3AED','#059669','#D97706'],
-        borderWidth: 0, hoverOffset: 6,
-      }]
+      datasets: [{ data: [pay.needs, pay.debt, pay.retirement, pay.lifestyle],
+        backgroundColor: ['#4F46E5','#7C3AED','#059669','#D97706'], borderWidth: 0, hoverOffset: 6 }]
     },
-    options: {
-      cutout: '72%',
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}/mo` } } },
-    }
+    options: { cutout: '72%', maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}/mo` } } } }
   });
 
   document.getElementById('paycheck-legend').innerHTML = [
-    ['#4F46E5', `Needs`, fmt(pay.needs)],
-    ['#7C3AED', `Debt`, fmt(pay.debt)],
-    ['#059669', `Retirement`, fmt(pay.retirement)],
-    ['#f59e0b', `Lifestyle`, fmt(pay.lifestyle)],
+    ['#4F46E5','Needs',fmt(pay.needs)], ['#7C3AED','Debt',fmt(pay.debt)],
+    ['#059669','Retirement',fmt(pay.retirement)], ['#D97706','Lifestyle',fmt(pay.lifestyle)],
   ].map(([c,l,v]) => `<div class="d-flex justify-content-between align-items-center" style="margin-bottom:3px;">
-    <div class="d-flex align-items-center gap-2"><div style="width:9px;height:9px;border-radius:2px;background:${c}"></div>    <span style="font-size:.75rem;color:var(--muted)">${l}</span></div>
+    <div class="d-flex align-items-center gap-2"><div style="width:9px;height:9px;border-radius:2px;background:${c}"></div>
+    <span style="font-size:.75rem;color:var(--muted)">${l}</span></div>
     <span style="font-size:.75rem;font-weight:600;color:var(--text)">${v}<span style="color:var(--muted);font-weight:400">/mo</span></span>
   </div>`).join('');
 
+  // Emergency fund — with progress bar if snapshot savings available
   const emergencyTarget = prof.monthly_expenses * 3;
+  const currentSavings  = snaps.length > 0 ? snaps[snaps.length - 1].savings_balance : 0;
+  const pct             = Math.min(100, Math.round((currentSavings / emergencyTarget) * 100));
+
+  if (snaps.length > 0) {
+    document.getElementById('emergency-progress-wrap').style.display = 'block';
+    document.getElementById('emergency-pct-label').textContent       = `${pct}% funded`;
+    document.getElementById('emergency-progress-bar').style.width    = pct + '%';
+    document.getElementById('emergency-progress-label').textContent  =
+      pct >= 100
+        ? '✓ Emergency fund complete — great work!'
+        : `${fmt(currentSavings)} saved of ${fmt(emergencyTarget)} goal · ${fmt(emergencyTarget - currentSavings)} to go`;
+  }
+
   document.getElementById('emergency-cards').innerHTML = `
-    <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Emergency Target</div><div class="optimizer-value" style="color:#f59e0b">${fmt(emergencyTarget)}</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">3 months of expenses</div></div></div>
-    <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Monthly to Save</div><div class="optimizer-value" style="color:#4F46E5">${fmt(emergencyTarget/6)}</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">to reach goal in 6 months</div></div></div>
-    <div class="col-12"><div class="optimizer-row"><div class="optimizer-label">Recommended HYSA Rate</div><div class="optimizer-value" style="color:#059669">4.50% APY</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">High-yield savings — SoFi, Marcus, Ally</div></div></div>`;
+    <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Emergency Target</div>
+      <div class="optimizer-value" style="color:#D97706">${fmt(emergencyTarget)}</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">3 months of expenses</div></div></div>
+    <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Monthly to Save</div>
+      <div class="optimizer-value" style="color:#4F46E5">${fmt(emergencyTarget/6)}</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">to reach goal in 6 months</div></div></div>
+    <div class="col-12"><div class="optimizer-row"><div class="optimizer-label">Recommended HYSA Rate</div>
+      <div class="optimizer-value" style="color:#059669">4.50% APY</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">High-yield savings — SoFi, Marcus, Ally</div></div></div>`;
+
+  // Quick-start guide for users with no snapshots
+  if (snaps.length === 0) {
+    document.getElementById('overview-quickstart').style.display = 'block';
+    document.getElementById('quickstart-links').innerHTML = [
+      ['diagram-3-fill',   '#4F46E5', 'See your 5-year projections',     "showSection('lifepaths', document.getElementById('nav-lifepaths'))"],
+      ['graph-up-arrow',   '#059669', 'Log your first weekly check-in',  "showSection('progress',  document.getElementById('nav-progress'))"],
+      ['house-fill',       '#7C3AED', 'Check what rent you can afford',  "showSection('optimizer', document.getElementById('nav-optimizer'))"],
+    ].map(([icon, color, label, fn]) => `
+      <button onclick="${fn}" style="display:flex;align-items:center;gap:.65rem;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:.55rem .85rem;cursor:pointer;text-align:left;width:100%;transition:border-color .15s;" onmouseover="this.style.borderColor='${color}'" onmouseout="this.style.borderColor='var(--border)'">
+        <i class="bi bi-${icon}" style="color:${color};font-size:1rem;width:20px;text-align:center;"></i>
+        <span style="font-size:.8rem;font-weight:600;color:var(--text);">${label}</span>
+        <i class="bi bi-arrow-right ms-auto" style="color:var(--muted);font-size:.75rem;"></i>
+      </button>`).join('');
+  }
 }
 
 // ── Life Paths ────────────────────────────────────────────────────────────────
