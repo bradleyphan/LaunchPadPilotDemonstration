@@ -121,6 +121,7 @@ def match_401k_analysis(salary, match_pct):
         }
 
     return {
+        "salary":            round(salary, 2),
         "match_pct":         match_pct,
         "user_monthly":      round(user_monthly, 2),
         "employer_monthly":  round(employer_monthly, 2),

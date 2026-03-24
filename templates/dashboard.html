@@ -263,12 +263,31 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
           <div class="text-center py-4" style="color:var(--muted);"><span class="spinner-border spinner-border-sm me-2"></span>Loading…</div>
         </div>
 
-        <!-- Right: grouped bar chart -->
+        <!-- Right: slider + grouped bar chart -->
         <div class="col-lg-8">
-          <div class="chart-card h-100">
+          <div class="chart-card h-100 d-flex flex-column">
             <div class="chart-title">Growth Comparison: With vs. Without Employer Match</div>
             <div class="chart-sub">At 7% avg annual return — the power of compounding free money</div>
-            <div class="chart-fill" style="position:relative;"><canvas id="match401kChart"></canvas></div>
+
+            <!-- Contribution slider -->
+            <div id="match-slider-wrap" style="display:none;background:var(--bg);border-radius:12px;padding:.85rem 1rem;margin-bottom:.75rem;">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label style="font-size:.78rem;font-weight:700;color:var(--text);">Your Contribution Rate</label>
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                  <span id="slider-pct-label" style="font-size:1.1rem;font-weight:800;color:var(--ind);">4%</span>
+                  <span id="slider-dollar-label" style="font-size:.78rem;color:var(--muted);font-weight:500;"></span>
+                </div>
+              </div>
+              <input type="range" id="contrib-slider" min="1" max="20" step="0.5" value="4"
+                style="width:100%;accent-color:#4F46E5;cursor:pointer;" oninput="update401kSlider(this.value)" />
+              <div class="d-flex justify-content-between mt-1">
+                <span style="font-size:.68rem;color:var(--muted);">1%</span>
+                <span id="match-marker" style="font-size:.68rem;color:#059669;font-weight:600;"></span>
+                <span style="font-size:.68rem;color:var(--muted);">20%</span>
+              </div>
+            </div>
+
+            <div class="chart-fill" style="position:relative;flex:1;"><canvas id="match401kChart"></canvas></div>
           </div>
         </div>
 
@@ -709,11 +728,37 @@ async function loadAdvice() {
 }
 
 // ── 401k Analyzer ─────────────────────────────────────────────────────────────
+let chart401k = null;
+
+function calc401kProjections(salary, matchPct, contribPct) {
+  const monthlyGross    = salary / 12;
+  const userMonthly     = monthlyGross * contribPct / 100;
+  const employerMonthly = monthlyGross * matchPct / 100; // fixed — employer caps at match_pct
+  const totalMonthly    = userMonthly + employerMonthly;
+  const rate            = 0.07 / 12;
+  const IRS_LIMIT       = 23500;
+
+  const proj = {};
+  for (const yrs of [5, 10, 20, 30]) {
+    let withMatch = 0, withoutMatch = 0;
+    for (let i = 0; i < yrs * 12; i++) {
+      withMatch    = (withMatch    + totalMonthly) * (1 + rate);
+      withoutMatch = (withoutMatch + userMonthly)  * (1 + rate);
+    }
+    proj[yrs] = {
+      withMatch:      Math.round(withMatch),
+      withoutMatch:   Math.round(withoutMatch),
+      freeMoneyValue: Math.round(withMatch - withoutMatch),
+    };
+  }
+  return { userMonthly, employerMonthly, totalMonthly, proj, maxingOut: (userMonthly * 12) >= IRS_LIMIT };
+}
+
 async function load401k() {
   const res  = await fetch('/api/401k');
   const data = await res.json();
+  window.data401k = data;
 
-  // Handle no match configured
   if (data.match_pct === 0) {
     document.getElementById('match-cards').innerHTML = `
       <div class="chart-card d-flex flex-column align-items-center justify-content-center text-center gap-3" style="flex:1;padding:2rem;">
@@ -724,73 +769,30 @@ async function load401k() {
     return;
   }
 
-  const p = data.projections;
+  // Set up slider
+  const slider = document.getElementById('contrib-slider');
+  slider.min   = Math.max(1, data.match_pct);
+  slider.max   = 20;
+  slider.step  = 0.5;
+  slider.value = data.match_pct;
+  document.getElementById('match-marker').textContent = `↑ Min for full match: ${data.match_pct}%`;
+  document.getElementById('match-slider-wrap').style.display = 'block';
 
-  // Stat cards
-  document.getElementById('match-cards').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Your Monthly Contribution</div>
-      <div class="stat-value">${fmt(data.user_monthly)}</div>
-      <div class="stat-sub">${data.match_pct}% of your gross salary</div>
-    </div>
-    <div class="stat-card" style="border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.04);">
-      <div class="stat-label">Employer Match <span style="color:#059669;font-weight:700;">(Free!)</span></div>
-      <div class="stat-value" style="color:#059669;">${fmt(data.employer_monthly)}</div>
-      <div class="stat-sub">${fmt(data.annual_free)}/yr added to your account</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Monthly Going In</div>
-      <div class="stat-value">${fmt(data.total_monthly)}</div>
-      <div class="stat-sub">Your contribution + free match</div>
-    </div>
-    <div class="stat-card" style="border-color:rgba(79,70,229,.3);background:rgba(79,70,229,.04);">
-      <div class="stat-label">Free Money Over 30 Years</div>
-      <div class="stat-value" style="color:var(--ind);">${fmt(p['30'].free_money_value)}</div>
-      <div class="stat-sub">What skipping the match costs you long-term</div>
-    </div>
-    ${!data.maxing_out ? `
-    <div style="background:rgba(217,119,6,.07);border:1.5px solid rgba(217,119,6,.25);border-radius:12px;padding:1rem;">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#D97706;margin-bottom:.3rem;">
-        <i class="bi bi-lightbulb-fill me-1"></i>IRS 2025 Limit
-      </div>
-      <div style="font-size:.8rem;color:var(--text);line-height:1.5;">
-        You can contribute up to <strong>$23,500/yr</strong> to your 401k. You're currently on track for <strong>${fmt(data.user_monthly * 12)}/yr</strong> — room to grow.
-      </div>
-    </div>` : `
-    <div style="background:rgba(5,150,105,.07);border:1.5px solid rgba(5,150,105,.25);border-radius:12px;padding:1rem;">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#059669;margin-bottom:.3rem;">
-        <i class="bi bi-trophy-fill me-1"></i>Maxing Out!
-      </div>
-      <div style="font-size:.8rem;color:var(--text);line-height:1.5;">You're hitting the $23,500 IRS limit. Outstanding — consider a Roth IRA next.</div>
-    </div>`}`;
-
-  // Grouped bar chart
-  new Chart(document.getElementById('match401kChart'), {
+  // Init chart then render
+  const ctx = document.getElementById('match401kChart').getContext('2d');
+  chart401k = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: ['5 Years', '10 Years', '20 Years', '30 Years'],
       datasets: [
-        {
-          label: 'With Employer Match',
-          data: [p['5'].with_match, p['10'].with_match, p['20'].with_match, p['30'].with_match],
-          backgroundColor: 'rgba(79,70,229,.8)',
-          borderColor: '#4F46E5',
-          borderWidth: 2,
-          borderRadius: 6,
-        },
-        {
-          label: 'Without Match (your contributions only)',
-          data: [p['5'].without_match, p['10'].without_match, p['20'].without_match, p['30'].without_match],
-          backgroundColor: 'rgba(100,116,139,.25)',
-          borderColor: '#94A3B8',
-          borderWidth: 2,
-          borderRadius: 6,
-        },
+        { label: 'With Employer Match',           data: [], backgroundColor: 'rgba(79,70,229,.8)',  borderColor: '#4F46E5', borderWidth: 2, borderRadius: 6 },
+        { label: 'Your Contributions Only',        data: [], backgroundColor: 'rgba(100,116,139,.2)', borderColor: '#94A3B8', borderWidth: 2, borderRadius: 6 },
       ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 250 },
       plugins: {
         legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
         tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` } },
@@ -801,7 +803,60 @@ async function load401k() {
       },
     },
   });
+
+  render401k(data.match_pct);
 }
+
+function render401k(contribPct) {
+  const data = window.data401k;
+  if (!data) return;
+  const pct = parseFloat(contribPct);
+  const { userMonthly, employerMonthly, totalMonthly, proj, maxingOut } = calc401kProjections(data.salary, data.match_pct, pct);
+
+  // Update slider labels
+  document.getElementById('slider-pct-label').textContent  = pct % 1 === 0 ? pct + '%' : pct.toFixed(1) + '%';
+  document.getElementById('slider-dollar-label').textContent = `(${fmt(userMonthly)}/mo)`;
+
+  // Update stat cards
+  const capturesFull = pct >= data.match_pct;
+  document.getElementById('match-cards').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Your Monthly Contribution</div>
+      <div class="stat-value">${fmt(userMonthly)}</div>
+      <div class="stat-sub">${pct % 1 === 0 ? pct : pct.toFixed(1)}% of gross · ${fmt(userMonthly * 12)}/yr</div>
+    </div>
+    <div class="stat-card" style="border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.04);">
+      <div class="stat-label">Employer Match <span style="color:#059669;font-weight:700;">(Free!)</span></div>
+      <div class="stat-value" style="color:#059669;">${fmt(employerMonthly)}</div>
+      <div class="stat-sub">${fmt(employerMonthly * 12)}/yr · ${capturesFull ? '✓ Full match captured' : '⚠ Increase to capture full match'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Monthly Going In</div>
+      <div class="stat-value">${fmt(totalMonthly)}</div>
+      <div class="stat-sub">You + employer combined</div>
+    </div>
+    <div class="stat-card" style="border-color:rgba(79,70,229,.3);background:rgba(79,70,229,.04);">
+      <div class="stat-label">Free Money Over 30 Years</div>
+      <div class="stat-value" style="color:var(--ind);">${fmt(proj[30].freeMoneyValue)}</div>
+      <div class="stat-sub">Employer match compounded at 7%</div>
+    </div>
+    ${maxingOut
+      ? `<div style="background:rgba(5,150,105,.07);border:1.5px solid rgba(5,150,105,.25);border-radius:12px;padding:1rem;">
+           <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#059669;margin-bottom:.3rem;"><i class="bi bi-trophy-fill me-1"></i>Maxing Out!</div>
+           <div style="font-size:.8rem;color:var(--text);line-height:1.5;">Hitting the $23,500 IRS limit. Outstanding — consider a Roth IRA next.</div>
+         </div>`
+      : `<div style="background:rgba(217,119,6,.07);border:1.5px solid rgba(217,119,6,.25);border-radius:12px;padding:1rem;">
+           <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#D97706;margin-bottom:.3rem;"><i class="bi bi-lightbulb-fill me-1"></i>IRS 2025 Limit</div>
+           <div style="font-size:.8rem;color:var(--text);line-height:1.5;">You can contribute up to <strong>$23,500/yr</strong>. You're on track for <strong>${fmt(userMonthly * 12)}/yr</strong> — room to grow.</div>
+         </div>`}`;
+
+  // Update chart data live
+  chart401k.data.datasets[0].data = [proj[5].withMatch,    proj[10].withMatch,    proj[20].withMatch,    proj[30].withMatch];
+  chart401k.data.datasets[1].data = [proj[5].withoutMatch, proj[10].withoutMatch, proj[20].withoutMatch, proj[30].withoutMatch];
+  chart401k.update();
+}
+
+function update401kSlider(val) { render401k(val); }
 
 // ── Track Progress ────────────────────────────────────────────────────────────
 let progressChart = null;
