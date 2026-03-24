@@ -283,7 +283,7 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
               <div class="d-flex justify-content-between mt-1">
                 <span style="font-size:.68rem;color:var(--muted);">1%</span>
                 <span id="match-marker" style="font-size:.68rem;color:#059669;font-weight:600;"></span>
-                <span style="font-size:.68rem;color:var(--muted);">20%</span>
+                <span id="slider-max-label" style="font-size:.68rem;color:var(--muted);">IRS max</span>
               </div>
             </div>
 
@@ -732,7 +732,8 @@ let chart401k = null;
 
 function calc401kProjections(salary, matchPct, contribPct) {
   const monthlyGross    = salary / 12;
-  const userMonthly     = monthlyGross * contribPct / 100;
+  const irsMonthlyMax   = 23500 / 12;
+  const userMonthly     = Math.min(monthlyGross * contribPct / 100, irsMonthlyMax);
   const employerMonthly = monthlyGross * matchPct / 100; // fixed — employer caps at match_pct
   const totalMonthly    = userMonthly + employerMonthly;
   const rate            = 0.07 / 12;
@@ -771,11 +772,13 @@ async function load401k() {
 
   // Set up slider
   const slider = document.getElementById('contrib-slider');
+  const irsMaxPct = data.irs_max_pct;
   slider.min   = Math.max(1, data.match_pct);
-  slider.max   = 20;
+  slider.max   = irsMaxPct;
   slider.step  = 0.5;
   slider.value = data.match_pct;
   document.getElementById('match-marker').textContent = `↑ Min for full match: ${data.match_pct}%`;
+  document.getElementById('slider-max-label').textContent = `${irsMaxPct}% (IRS max)`;
   document.getElementById('match-slider-wrap').style.display = 'block';
 
   // Init chart then render

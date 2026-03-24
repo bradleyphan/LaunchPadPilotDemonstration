@@ -129,6 +129,7 @@ def match_401k_analysis(salary, match_pct):
         "annual_free":       round(employer_monthly * 12, 2),
         "projections":       projections,
         "irs_limit":         23500,
+        "irs_max_pct":       round(min(100, (23500 / salary) * 100), 1) if salary > 0 else 100,
         "maxing_out":        (user_monthly * 12) >= 23500,
     }
 
