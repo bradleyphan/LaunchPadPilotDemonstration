@@ -36,7 +36,7 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
 .main-content { flex: 1; padding: 1.5rem 2rem; min-width: 0; height: calc(100vh - 57px); overflow-y: auto; display: flex; flex-direction: column; }
 .section-panel { display: none; }
 .section-panel.active { display: flex; flex-direction: column; flex: 1; }
-.section-panel.active .row { flex: 1; }
+.section-panel.active > .row:first-of-type { flex: 1; }
 .section-panel.active .chart-card { display: flex; flex-direction: column; }
 .section-panel.active .chart-card > div[style*="position:relative"] { flex: 1; height: auto !important; }
 .stat-card {
@@ -362,15 +362,15 @@ async function loadLifePaths() {
   };
 
   document.getElementById('path-summary-cards').innerHTML = Object.entries(paths).map(([key, p]) => `
-    <div class="col-md-4">
-      <div class="chart-card h-100">
-        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+    <div class="col-12">
+      <div class="chart-card">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
           <div style="width:12px;height:12px;border-radius:3px;background:${colors[key]};flex-shrink:0"></div>
-          <span style="font-weight:700;font-size:.9rem">${p.label}</span>
+          <span style="font-weight:700;font-size:.88rem">${p.label}</span>
         </div>
-        <p style="font-size:.78rem;color:var(--muted);margin-bottom:.75rem">${descs[key]}</p>
-        <div style="font-size:1.4rem;font-weight:800;color:${colors[key]}">${fmt(p.data[59])}</div>
-        <div style="font-size:.75rem;color:var(--muted)">Net worth at Year 5</div>
+        <p style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;line-height:1.5">${descs[key]}</p>
+        <div style="font-size:1.3rem;font-weight:800;color:${colors[key]}">${fmt(p.data[59])}</div>
+        <div style="font-size:.72rem;color:var(--muted)">Net worth at Year 5</div>
       </div>
     </div>`).join('');
 }
@@ -397,9 +397,15 @@ async function loadOptimizer() {
     }
   });
 
-  const icons    = ['arrow-up-circle-fill', 'piggy-bank-fill', 'graph-up-arrow'];
-  const subtexts = [
-    d => `Saves ${fmt(d.detail)} in interest`,
+  const icons      = ['arrow-up-circle-fill', 'piggy-bank-fill', 'graph-up-arrow'];
+  const headlines  = [
+    d => fmt(d.detail),
+    d => fmt(d.net_worth),
+    d => fmt(d.net_worth),
+  ];
+  const headLabels = ['Interest Saved', '5-yr Net Worth', '5-yr Net Worth'];
+  const subtexts   = [
+    d => `Loan fully paid off — ${fmt(d.detail)} in interest avoided`,
     d => `HYSA balance: ${fmt(d.detail)}`,
     d => `Roth IRA balance: ${fmt(d.detail)}`,
   ];
@@ -410,8 +416,9 @@ async function loadOptimizer() {
           <i class="bi bi-${icons[i]}" style="color:${colors[i]};font-size:1.1rem"></i>
           <span style="font-weight:700;font-size:.88rem">${d.label}</span>
         </div>
-        <div class="optimizer-value" style="color:${colors[i]}">${fmt(d.net_worth)}</div>
-        <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">5-yr net worth &middot; ${subtexts[i](d)}</div>
+        <div class="optimizer-value" style="color:${colors[i]}">${headlines[i](d)}</div>
+        <div style="font-size:.72rem;color:var(--primary);font-weight:600;margin-top:.15rem">${headLabels[i]}</div>
+        <div style="font-size:.73rem;color:var(--muted);margin-top:.2rem">${subtexts[i](d)}</div>
       </div>
     </div>`).join('');
 }
