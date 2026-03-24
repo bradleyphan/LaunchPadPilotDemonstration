@@ -403,7 +403,7 @@ async function loadOptimizer() {
 
   document.getElementById('optimizer-cards').innerHTML = data.map((d, i) => {
     const cfg = cardConfig[d.key];
-    return `<div class="col-md-4">
+    return `<div class="col-12">
       <div class="optimizer-row">
         <div class="d-flex align-items-center gap-2 mb-2">
           <i class="bi bi-${icons[i]}" style="color:${colors[i]};font-size:1.1rem"></i>
