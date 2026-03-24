@@ -99,45 +99,51 @@ def paycheck_allocation(salary):
     }
 
 
-def debt_optimizer(loan_balance, loan_rate_pct, extra_monthly, years=5):
-    months = years * 12
-    r = (loan_rate_pct / 100) / 12
-    hysa_rate = 0.045 / 12
-    roth_rate = 0.07 / 12
+def rent_affordability(salary, loan_balance, loan_rate_pct):
+    monthly_gross = salary / 12
+    # Approximate take-home after federal + state taxes (~22% effective rate for $50-80k)
+    monthly_takehome = monthly_gross * 0.78
 
+    r = (loan_rate_pct / 100) / 12
     if loan_balance > 0 and r > 0:
         n = 120
         min_payment = max(100, loan_balance * (r * (1 + r) ** n) / ((1 + r) ** n - 1))
     else:
         min_payment = 0
 
-    # Option A: pay extra toward loan; once paid off, invest freed cash in HYSA
-    loan_a, inv_a, interest_saved = float(loan_balance), 0.0, 0.0
-    for _ in range(months):
-        if loan_a > 0:
-            interest = loan_a * r
-            interest_saved += interest
-            loan_a = max(0, loan_a + interest - (min_payment + extra_monthly))
-        else:
-            inv_a = (inv_a + min_payment + extra_monthly) * (1 + hysa_rate)
+    tiers = []
+    for key, pct, label in [
+        ("comfortable", 0.25, "Comfortable"),
+        ("standard",    0.28, "Standard Max"),
+        ("stretch",     0.33, "Stretch"),
+    ]:
+        rent = monthly_gross * pct
+        after_rent = monthly_takehome - rent
+        after_loan = after_rent - min_payment
+        # Savings potential = 20% of what's left after rent + loan
+        savings = max(0, after_loan * 0.20)
+        emergency_target = rent * 3  # 3 months of rent as a proxy
+        months_to_emergency = round(emergency_target / savings) if savings > 0 else 99
+        verdict = "good" if pct <= 0.25 else ("ok" if pct <= 0.28 else "tight")
 
-    # Option B: pay minimum on loan; put extra in HYSA
-    loan_b, inv_b = float(loan_balance), 0.0
-    for _ in range(months):
-        loan_b = max(0, loan_b * (1 + r) - min_payment)
-        inv_b = (inv_b + extra_monthly) * (1 + hysa_rate)
+        tiers.append({
+            "key":               key,
+            "label":             label,
+            "rent":              round(rent, 0),
+            "pct_gross":         round(pct * 100, 0),
+            "after_rent":        round(after_rent, 0),
+            "after_loan":        round(max(0, after_loan), 0),
+            "savings_potential": round(savings, 0),
+            "months_to_emergency": min(int(months_to_emergency), 99),
+            "verdict":           verdict,
+        })
 
-    # Option C: pay minimum on loan; put extra in Roth IRA
-    loan_c, inv_c = float(loan_balance), 0.0
-    for _ in range(months):
-        loan_c = max(0, loan_c * (1 + r) - min_payment)
-        inv_c = (inv_c + extra_monthly) * (1 + roth_rate)
-
-    return [
-        {"key": "pay_debt", "net_worth": round(inv_a, 2),            "detail": round(interest_saved, 2), "label": "Pay Off Loan Faster"},
-        {"key": "hysa",     "net_worth": round(inv_b - loan_b, 2),   "detail": round(inv_b, 2),          "label": "High-Yield Savings (4.5%)"},
-        {"key": "roth",     "net_worth": round(inv_c - loan_c, 2),   "detail": round(inv_c, 2),          "label": "Roth IRA (7% avg)"},
-    ]
+    return {
+        "monthly_gross":     round(monthly_gross, 0),
+        "monthly_takehome":  round(monthly_takehome, 0),
+        "loan_min_payment":  round(min_payment, 0),
+        "tiers":             tiers,
+    }
 
 
 def generate_advice(profile):
@@ -338,14 +344,13 @@ def api_paycheck():
     return jsonify(paycheck_allocation(p["salary"])), 200
 
 
-@app.route("/api/debt-optimizer")
+@app.route("/api/rent")
 @require_auth
-def api_debt_optimizer():
+def api_rent():
     p = profiles_col.find_one({"user_id": session["user_id"]})
     if not p:
         return jsonify({"error": "No profile"}), 404
-    monthly_surplus = max(200, (p["salary"] / 12) - p.get("monthly_expenses", 0))
-    return jsonify(debt_optimizer(p["loan_balance"], p.get("loan_rate", 5.5), monthly_surplus)), 200
+    return jsonify(rent_affordability(p["salary"], p["loan_balance"], p.get("loan_rate", 5.5))), 200
 
 
 @app.route("/api/advice")
