@@ -9,9 +9,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
   <style>
     :root {
-      --red:        #E53935;
-      --red-dark:   #C62828;
-      --red-light:  #FFEBEE;
+      --ind:        #4F46E5;
+      --ind-dark:   #4338CA;
+      --ind-light:  #EEF2FF;
       --charcoal:   #1A1A2E;
       --navy:       #16213E;
       --gray-1:     #F8F9FA;
@@ -49,7 +49,7 @@
       letter-spacing: -.5px;
       text-decoration: none;
     }
-    .navbar-brand .accent { color: var(--red); }
+    .navbar-brand .accent { color: var(--ind); }
     .live-dot {
       display: inline-flex;
       align-items: center;
@@ -57,9 +57,9 @@
       font-size: .68rem;
       font-weight: 700;
       letter-spacing: .5px;
-      color: var(--red);
-      background: var(--red-light);
-      border: 1px solid rgba(229,57,53,.2);
+      color: var(--ind);
+      background: var(--ind-light);
+      border: 1px solid rgba(79,70,229,.2);
       padding: 3px 10px;
       border-radius: 20px;
     }
@@ -67,7 +67,7 @@
       content: '';
       width: 6px; height: 6px;
       border-radius: 50%;
-      background: var(--red);
+      background: var(--ind);
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
@@ -83,19 +83,19 @@
       text-decoration: none;
       transition: border-color .2s, background .2s;
     }
-    .btn-nav-login:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+    .btn-nav-login:hover { border-color: var(--ind); color: var(--ind); background: var(--ind-light); }
 
     .btn-nav-cta {
       font-size: .83rem;
       font-weight: 700;
       padding: .45rem 1.2rem;
       border-radius: 8px;
-      background: var(--red);
+      background: var(--ind);
       color: #fff !important;
       text-decoration: none;
       transition: background .2s, transform .15s;
     }
-    .btn-nav-cta:hover { background: var(--red-dark); transform: translateY(-1px); }
+    .btn-nav-cta:hover { background: var(--ind-dark); transform: translateY(-1px); }
 
     /* ── Hero ─────────────────────────────────────────────────────────────── */
     .hero {
@@ -111,9 +111,9 @@
       font-weight: 700;
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: var(--red);
-      background: var(--red-light);
-      border: 1px solid rgba(229,57,53,.2);
+      color: var(--ind);
+      background: var(--ind-light);
+      border: 1px solid rgba(79,70,229,.2);
       padding: 5px 14px;
       border-radius: 20px;
       margin-bottom: 1.5rem;
@@ -126,7 +126,7 @@
       color: var(--charcoal);
       margin-bottom: 1.25rem;
     }
-    .hero h1 .red { color: var(--red); }
+    .hero h1 .ind { color: var(--ind); }
     .hero p.lead {
       font-size: 1.1rem;
       color: var(--gray-text);
@@ -139,7 +139,7 @@
       display: inline-flex;
       align-items: center;
       gap: .5rem;
-      background: var(--red);
+      background: var(--ind);
       color: #fff;
       font-weight: 700;
       font-size: .95rem;
@@ -147,9 +147,9 @@
       border-radius: 10px;
       text-decoration: none;
       transition: background .2s, transform .15s, box-shadow .2s;
-      box-shadow: 0 4px 16px rgba(229,57,53,.25);
+      box-shadow: 0 4px 16px rgba(79,70,229,.25);
     }
-    .btn-hero-primary:hover { background: var(--red-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(229,57,53,.3); color: #fff; }
+    .btn-hero-primary:hover { background: var(--ind-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(79,70,229,.3); color: #fff; }
 
     .btn-hero-secondary {
       display: inline-flex;
@@ -185,7 +185,7 @@
       font-weight: 700;
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: var(--red);
+      color: var(--ind);
     }
     .section-headline {
       font-size: clamp(1.7rem, 3vw, 2.4rem);
@@ -203,8 +203,8 @@
       box-shadow: 0 2px 8px rgba(0,0,0,.04);
     }
     .feature-card:hover {
-      border-color: var(--red);
-      box-shadow: 0 8px 28px rgba(229,57,53,.1);
+      border-color: var(--ind);
+      box-shadow: 0 8px 28px rgba(79,70,229,.1);
       transform: translateY(-4px);
     }
     .feature-icon {
@@ -227,13 +227,13 @@
     .step-number {
       width: 40px; height: 40px;
       border-radius: 50%;
-      background: var(--red);
+      background: var(--ind);
       color: #fff;
       font-weight: 800;
       font-size: .95rem;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(229,57,53,.25);
+      box-shadow: 0 4px 12px rgba(79,70,229,.25);
     }
     .step-title { font-weight: 700; font-size: .95rem; color: var(--charcoal); margin-bottom: .25rem; }
     .step-desc  { font-size: .84rem; color: var(--gray-text); margin: 0; line-height: 1.6; }
@@ -264,7 +264,7 @@
 <nav class="navbar navbar-expand-lg">
   <div class="container d-flex justify-content-between align-items-center">
     <a class="navbar-brand" href="/">
-      <i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--red)"></i>Launchpad<span class="accent">Pilot</span>
+      <i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--ind)"></i>Launchpad<span class="accent">Pilot</span>
     </a>
     <div class="d-flex align-items-center gap-3">
       <span class="live-dot d-none d-sm-inline-flex">LIVE</span>
@@ -278,7 +278,7 @@
 <section class="hero">
   <div class="container">
     <div class="hero-eyebrow"><i class="bi bi-mortarboard-fill"></i> Built for New Graduates</div>
-    <h1>Close the<br/><span class="red">Graduation Gap.</span></h1>
+    <h1>Close the<br/><span class="ind">Graduation Gap.</span></h1>
     <p class="lead">You got the job. Now what? LaunchPad Pilot turns your first real salary into a clear, personalized financial strategy — debt payoff, investing, and a 12-month game plan.</p>
     <div class="d-flex justify-content-center gap-3 flex-wrap">
       <a href="/register" class="btn-hero-primary">
@@ -320,12 +320,12 @@
   <div class="container">
     <div class="text-center mb-5">
       <p class="section-eyebrow mb-2">Core Features</p>
-      <h2 class="section-headline">Everything you need to launch<br/><span style="color:var(--red)">financially confident.</span></h2>
+      <h2 class="section-headline">Everything you need to launch<br/><span style="color:var(--ind)">financially confident.</span></h2>
     </div>
     <div class="row g-4">
       <div class="col-md-4">
         <div class="feature-card">
-          <div class="feature-icon" style="background:var(--red-light);color:var(--red)"><i class="bi bi-diagram-3-fill"></i></div>
+          <div class="feature-icon" style="background:var(--ind-light);color:var(--ind)"><i class="bi bi-diagram-3-fill"></i></div>
           <h5>Life Path Simulations</h5>
           <p>Compare three 5-year financial strategies side by side: Aggressive Payoff, Balanced, and Investor Path — so you choose with data, not guesswork.</p>
         </div>
@@ -353,7 +353,7 @@
       </div>
       <div class="col-md-4">
         <div class="feature-card">
-          <div class="feature-icon" style="background:var(--red-light);color:var(--red)"><i class="bi bi-cpu-fill"></i></div>
+          <div class="feature-icon" style="background:var(--ind-light);color:var(--ind)"><i class="bi bi-cpu-fill"></i></div>
           <h5>AI Financial Advisor</h5>
           <p>Personalized, actionable advice based on your actual salary, debt, and DTI ratio — not generic tips copied from a blog post.</p>
         </div>
@@ -374,7 +374,7 @@
   <div class="container">
     <div class="text-center mb-5">
       <p class="section-eyebrow mb-2">How It Works</p>
-      <h2 class="section-headline">Up and running in <span style="color:var(--red)">2 minutes.</span></h2>
+      <h2 class="section-headline">Up and running in <span style="color:var(--ind)">2 minutes.</span></h2>
     </div>
     <div class="row g-4 justify-content-center">
       <div class="col-md-4">
@@ -411,7 +411,7 @@
 <!-- CTA -->
 <section class="cta-section">
   <div class="container">
-    <h2>Ready to close your <span style="color:var(--red)">Graduation Gap?</span></h2>
+    <h2>Ready to close your <span style="color:var(--ind)">Graduation Gap?</span></h2>
     <p>It takes 2 minutes to set up your profile and see your personalized financial life paths.</p>
     <a href="/register" class="btn-hero-primary" style="display:inline-flex;">
       <i class="bi bi-arrow-right-circle-fill"></i> Create Free Account

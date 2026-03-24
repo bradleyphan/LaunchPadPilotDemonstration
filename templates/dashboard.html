@@ -2,19 +2,31 @@
 {% block title %}Dashboard — LaunchPad Pilot{% endblock %}
 
 {% block styles %}
-body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
+:root {
+  --ind:       #4F46E5;
+  --ind-dark:  #4338CA;
+  --ind-light: #EEF2FF;
+  --bg:        #F8FAFC;
+  --surface:   #FFFFFF;
+  --border:    #E2E8F0;
+  --text:      #0F172A;
+  --muted:     #64748B;
+  --success:   #059669;
+  --warn:      #D97706;
+  --danger:    #DC2626;
+}
+body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
 .topbar {
-  background: rgba(10,14,26,.9);
-  backdrop-filter: blur(12px);
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: .85rem 0;
   position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
 .sidebar {
   width: 240px; min-width: 240px;
-  background: var(--bg-card);
+  background: var(--surface);
   border-right: 1px solid var(--border);
-  min-height: calc(100vh - 57px);
   padding: 1.5rem 1rem;
   position: sticky; top: 57px;
   height: calc(100vh - 57px);
@@ -30,8 +42,8 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
   width: 100%; text-align: left;
   cursor: pointer; transition: background .15s, color .15s;
 }
-.nav-item-btn:hover { background: var(--bg-card-2); color: #e2e8f0; }
-.nav-item-btn.active { background: rgba(15,98,254,.12); color: var(--primary); font-weight: 600; }
+.nav-item-btn:hover { background: var(--ind-light); color: var(--ind); }
+.nav-item-btn.active { background: var(--ind-light); color: var(--ind); font-weight: 700; }
 .nav-item-btn i { font-size: 1rem; width: 20px; text-align: center; }
 .main-content { flex: 1; padding: 1.5rem 2rem; min-width: 0; height: calc(100vh - 57px); overflow-y: auto; display: flex; flex-direction: column; }
 .section-panel { display: none; }
@@ -39,66 +51,68 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
 .section-panel.active > .row-fill { flex: 1; min-height: 0; }
 .chart-fill { height: calc(100vh - 420px); }
 .stat-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
   border-radius: 14px;
   padding: 1rem 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
 }
 .stat-label { font-size: .72rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
-.stat-value { font-size: 1.7rem; font-weight: 800; color: #fff; letter-spacing: -1px; }
+.stat-value { font-size: 1.7rem; font-weight: 800; color: var(--text); letter-spacing: -1px; }
 .stat-sub { font-size: .75rem; color: var(--muted); margin-top: .15rem; }
-.chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; }
-.chart-title { font-size: 1rem; font-weight: 700; margin-bottom: .25rem; }
+.chart-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+.chart-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
 .chart-sub { font-size: .8rem; color: var(--muted); margin-bottom: 1.25rem; }
 .advice-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
   display: flex; gap: 1rem; align-items: flex-start;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
 }
 .advice-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-.advice-title { font-size: .9rem; font-weight: 700; margin-bottom: .3rem; }
+.advice-title { font-size: .9rem; font-weight: 700; color: var(--text); margin-bottom: .3rem; }
 .advice-body { font-size: .82rem; color: var(--muted); line-height: 1.6; margin: 0; }
 .roadmap-month { margin-bottom: 1.5rem; }
-.roadmap-month-title { font-size: .78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--primary); margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
+.roadmap-month-title { font-size: .78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ind); margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
 .task-item {
   display: flex; align-items: flex-start; gap: .75rem;
   padding: .65rem .85rem;
   border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
   margin-bottom: .5rem;
   cursor: pointer;
-  transition: border-color .15s;
+  transition: border-color .15s, background .15s;
 }
-.task-item:hover { border-color: rgba(15,98,254,.3); }
-.task-item.done { opacity: .55; }
+.task-item:hover { border-color: var(--ind); background: var(--ind-light); }
+.task-item.done { opacity: .6; }
 .task-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background .15s, border-color .15s; margin-top: 1px; }
 .task-item.done .task-check { background: var(--success); border-color: var(--success); }
-.task-text { font-size: .83rem; color: #cbd5e1; line-height: 1.5; }
+.task-text { font-size: .83rem; color: var(--text); line-height: 1.5; }
 .task-item.done .task-text { text-decoration: line-through; color: var(--muted); }
-.optimizer-row { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+.optimizer-row { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
 .optimizer-label { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: .5rem; }
-.optimizer-value { font-size: 1.4rem; font-weight: 800; letter-spacing: -.5px; }
+.optimizer-value { font-size: 1.4rem; font-weight: 800; letter-spacing: -.5px; color: var(--text); }
 .section-header { margin-bottom: 1rem; }
-.section-header h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: .15rem; }
+.section-header h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -.5px; color: var(--text); margin-bottom: .15rem; }
 .section-header p { font-size: .82rem; color: var(--muted); margin: 0; }
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .mobile-nav { display: flex !important; }
 }
-.mobile-nav { display: none; overflow-x: auto; gap: .5rem; padding: .75rem 1rem; background: var(--bg-card); border-bottom: 1px solid var(--border); }
-.mobile-nav-btn { white-space: nowrap; font-size: .78rem; font-weight: 600; padding: .4rem .9rem; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
-.mobile-nav-btn.active { background: rgba(15,98,254,.12); color: var(--primary); border-color: rgba(15,98,254,.3); }
+.mobile-nav { display: none; overflow-x: auto; gap: .5rem; padding: .75rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border); }
+.mobile-nav-btn { white-space: nowrap; font-size: .78rem; font-weight: 600; padding: .4rem .9rem; border-radius: 20px; border: 1.5px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
+.mobile-nav-btn.active { background: var(--ind-light); color: var(--ind); border-color: var(--ind); }
 {% endblock %}
 
 {% block body %}
 <!-- Topbar -->
 <nav class="topbar">
   <div class="container-fluid px-3 d-flex justify-content-between align-items-center">
-    <a href="/" style="font-weight:800;color:#fff;text-decoration:none;font-size:1.05rem;">
-      <i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--primary)"></i>Launchpad<span style="color:var(--primary)">Pilot</span>
+    <a href="/" style="font-weight:800;color:var(--text);text-decoration:none;font-size:1.05rem;">
+      <i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--ind)"></i>Launchpad<span style="color:var(--ind)">Pilot</span>
     </a>
     <div class="d-flex align-items-center gap-3">
       <span style="font-size:.83rem;color:var(--muted);">
@@ -225,10 +239,10 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
       <div id="roadmap-progress-bar" class="mb-4">
         <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
           <span style="color:var(--muted);">Progress</span>
-          <span id="roadmap-pct" style="color:var(--primary);font-weight:600;">0%</span>
+          <span id="roadmap-pct" style="color:var(--ind);font-weight:600;">0%</span>
         </div>
-        <div style="background:var(--bg-card-2);border-radius:20px;height:8px;">
-          <div id="roadmap-bar" style="background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:20px;height:8px;width:0%;transition:width .4s;"></div>
+        <div style="background:#E2E8F0;border-radius:20px;height:8px;">
+          <div id="roadmap-bar" style="background:linear-gradient(90deg,#4F46E5,#7C3AED);border-radius:20px;height:8px;width:0%;transition:width .4s;"></div>
         </div>
       </div>
       <div id="roadmap-container"></div>
@@ -256,8 +270,8 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
 const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
 const fmtK = n => n >= 1000 ? '$' + (n/1000).toFixed(1) + 'k' : fmt(n);
 
-Chart.defaults.color = '#8b9cbf';
-Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.color = '#64748B';
+Chart.defaults.borderColor = '#E2E8F0';
 
 function showSection(id, btn) {
   document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
@@ -277,7 +291,7 @@ async function loadOverview() {
   const dti = prof.loan_balance / prof.salary;
   const surplus = pay.monthly - prof.monthly_expenses;
   const dtiLabel = dti < 0.15 ? 'Excellent' : dti < 0.35 ? 'Manageable' : 'High — act fast';
-  const dtiColor = dti < 0.15 ? '#4ade80' : dti < 0.35 ? '#fbbf24' : '#f87171';
+  const dtiColor = dti < 0.15 ? '#059669' : dti < 0.35 ? '#D97706' : '#DC2626';
 
   document.getElementById('stat-monthly').textContent  = fmtK(pay.monthly);
   document.getElementById('stat-loan').textContent     = fmtK(prof.loan_balance);
@@ -292,7 +306,7 @@ async function loadOverview() {
       labels: ['Needs (50%)', 'Debt (20%)', 'Retirement (10%)', 'Lifestyle (20%)'],
       datasets: [{
         data: [pay.needs, pay.debt, pay.retirement, pay.lifestyle],
-        backgroundColor: ['#0f62fe','#6929c4','#24a148','#f59e0b'],
+        backgroundColor: ['#4F46E5','#7C3AED','#059669','#D97706'],
         borderWidth: 0, hoverOffset: 6,
       }]
     },
@@ -304,20 +318,20 @@ async function loadOverview() {
   });
 
   document.getElementById('paycheck-legend').innerHTML = [
-    ['#0f62fe', `Needs`, fmt(pay.needs)],
-    ['#6929c4', `Debt`, fmt(pay.debt)],
-    ['#24a148', `Retirement`, fmt(pay.retirement)],
+    ['#4F46E5', `Needs`, fmt(pay.needs)],
+    ['#7C3AED', `Debt`, fmt(pay.debt)],
+    ['#059669', `Retirement`, fmt(pay.retirement)],
     ['#f59e0b', `Lifestyle`, fmt(pay.lifestyle)],
   ].map(([c,l,v]) => `<div class="d-flex justify-content-between align-items-center" style="margin-bottom:3px;">
-    <div class="d-flex align-items-center gap-2"><div style="width:9px;height:9px;border-radius:2px;background:${c}"></div><span style="font-size:.75rem;color:#cbd5e1">${l}</span></div>
-    <span style="font-size:.75rem;font-weight:600;color:#e2e8f0">${v}<span style="color:var(--muted);font-weight:400">/mo</span></span>
+    <div class="d-flex align-items-center gap-2"><div style="width:9px;height:9px;border-radius:2px;background:${c}"></div>    <span style="font-size:.75rem;color:var(--muted)">${l}</span></div>
+    <span style="font-size:.75rem;font-weight:600;color:var(--text)">${v}<span style="color:var(--muted);font-weight:400">/mo</span></span>
   </div>`).join('');
 
   const emergencyTarget = prof.monthly_expenses * 3;
   document.getElementById('emergency-cards').innerHTML = `
     <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Emergency Target</div><div class="optimizer-value" style="color:#f59e0b">${fmt(emergencyTarget)}</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">3 months of expenses</div></div></div>
-    <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Monthly to Save</div><div class="optimizer-value" style="color:var(--primary)">${fmt(emergencyTarget/6)}</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">to reach goal in 6 months</div></div></div>
-    <div class="col-12"><div class="optimizer-row"><div class="optimizer-label">Recommended HYSA Rate</div><div class="optimizer-value" style="color:#4ade80">4.50% APY</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">High-yield savings — SoFi, Marcus, Ally</div></div></div>`;
+    <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Monthly to Save</div><div class="optimizer-value" style="color:#4F46E5">${fmt(emergencyTarget/6)}</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">to reach goal in 6 months</div></div></div>
+    <div class="col-12"><div class="optimizer-row"><div class="optimizer-label">Recommended HYSA Rate</div><div class="optimizer-value" style="color:#059669">4.50% APY</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">High-yield savings — SoFi, Marcus, Ally</div></div></div>`;
 }
 
 // ── Life Paths ────────────────────────────────────────────────────────────────
@@ -353,7 +367,7 @@ async function loadLifePaths() {
     }
   });
 
-  const colors = { aggressive: '#0f62fe', balanced: '#6929c4', investor: '#24a148' };
+  const colors = { aggressive: '#4F46E5', balanced: '#7C3AED', investor: '#059669' };
   const descs  = {
     aggressive: 'Put all surplus toward debt until paid off, then invest everything in HYSA.',
     balanced:   'Split surplus: extra debt payment + Roth IRA contributions simultaneously.',
@@ -378,7 +392,7 @@ async function loadLifePaths() {
 async function loadOptimizer() {
   const res  = await fetch('/api/debt-optimizer');
   const data = await res.json(); // array: [pay_debt, hysa, roth]
-  const colors = ['#0f62fe', '#24a148', '#6929c4'];
+  const colors = ['#4F46E5', '#059669', '#7C3AED'];
   const icons  = ['arrow-up-circle-fill', 'piggy-bank-fill', 'graph-up-arrow'];
 
   new Chart(document.getElementById('optimizerChart'), {
@@ -410,7 +424,7 @@ async function loadOptimizer() {
           <span style="font-weight:700;font-size:.88rem">${d.label}</span>
         </div>
         <div class="optimizer-value" style="color:${colors[i]}">${cfg.headline(d)}</div>
-        <div style="font-size:.72rem;color:var(--primary);font-weight:600;margin-top:.15rem">${cfg.headLabel}</div>
+        <div style="font-size:.72rem;color:var(--ind);font-weight:600;margin-top:.15rem">${cfg.headLabel}</div>
         <div style="font-size:.73rem;color:var(--muted);margin-top:.2rem">${cfg.sub(d)}</div>
       </div>
     </div>`;
@@ -503,7 +517,7 @@ async function toggleTask(taskId, el) {
 async function loadAdvice() {
   const res  = await fetch('/api/advice');
   const list = await res.json();
-  const priorityColors = { high: ['rgba(239,68,68,.12)', '#f87171'], medium: ['rgba(245,158,11,.1)', '#fbbf24'] };
+  const priorityColors = { high: ['rgba(79,70,229,.1)', '#4F46E5'], medium: ['rgba(217,119,6,.1)', '#D97706'] };
 
   document.getElementById('advice-container').innerHTML = list.map(a => {
     const [bg, color] = priorityColors[a.priority] || priorityColors.medium;
