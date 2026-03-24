@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}LaunchPad Pilot{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0f62fe;
+      --primary-dark: #0043ce;
+      --accent: #6929c4;
+      --success: #24a148;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #0a0e1a;
+      --bg-card: #111827;
+      --bg-card-2: #1a2235;
+      --border: rgba(255,255,255,0.07);
+      --muted: #8b9cbf;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    .card-glass {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+    .text-muted-custom { color: var(--muted) !important; }
+    .badge-pill {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+    .badge-high    { background: rgba(239,68,68,0.12);   color: #f87171; }
+    .badge-medium  { background: rgba(245,158,11,0.12);  color: #fbbf24; }
+    .badge-success { background: rgba(36,161,72,0.12);   color: #4ade80; }
+    .btn-primary-grad {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 600;
+      transition: opacity .2s, transform .15s;
+    }
+    .btn-primary-grad:hover  { opacity: .85; transform: translateY(-1px); color: #fff; }
+    .btn-primary-grad:active { transform: translateY(0); color: #fff; }
+    .form-control, .form-select {
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      color: #e2e8f0;
+      border-radius: 10px;
+    }
+    .form-control:focus, .form-select:focus {
+      background: var(--bg-card-2);
+      border-color: var(--primary);
+      color: #e2e8f0;
+      box-shadow: 0 0 0 3px rgba(15,98,254,.18);
+    }
+    .form-control::placeholder { color: #4a5a7a; }
+    .input-group-text {
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .form-label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: #c9d6ef;
+      margin-bottom: .35rem;
+    }
+    {% block styles %}{% endblock %}
+  </style>
+</head>
+<body>
+  {% block body %}{% endblock %}
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

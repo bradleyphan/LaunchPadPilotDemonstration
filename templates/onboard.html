@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Set Up Your Profile — LaunchPad Pilot{% endblock %}
+
+{% block styles %}
+body { display: flex; flex-direction: column; min-height: 100vh; }
+.onboard-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2.5rem 1rem; }
+.onboard-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem; width: 100%; max-width: 560px; }
+.step-badge { display: inline-flex; align-items: center; gap: 6px; font-size: .72rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--primary); background: rgba(15,98,254,.1); border: 1px solid rgba(15,98,254,.25); padding: 4px 12px; border-radius: 20px; margin-bottom: 1rem; }
+.onboard-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: .35rem; }
+.onboard-sub { font-size: .875rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.6; }
+.field-hint { font-size: .75rem; color: var(--muted); margin-top: .3rem; }
+#alert-box { display: none; border-radius: 8px; font-size: .83rem; padding: .65rem 1rem; margin-bottom: 1rem; }
+#alert-box.show { display: block; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #f87171; }
+{% endblock %}
+
+{% block body %}
+<nav style="background:rgba(10,14,26,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:.9rem 0;">
+  <div class="container d-flex justify-content-between align-items-center">
+    <a href="/" style="font-weight:800;color:#fff;text-decoration:none;font-size:1.05rem;">
+      <i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--primary)"></i>Launchpad<span style="color:var(--primary)">Pilot</span>
+    </a>
+    <a href="/logout" style="font-size:.83rem;color:var(--muted);text-decoration:none;"><i class="bi bi-box-arrow-right me-1"></i>Log out</a>
+  </div>
+</nav>
+
+<div class="onboard-wrap">
+  <div class="onboard-card">
+    <div class="step-badge"><i class="bi bi-person-fill"></i> Profile Setup</div>
+    <h1 class="onboard-title">Tell us your numbers.</h1>
+    <p class="onboard-sub">This is the data that powers every simulation, chart, and recommendation. You can update it anytime from your dashboard.</p>
+
+    <div id="alert-box"></div>
+
+    <form id="onboard-form" novalidate>
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label"><i class="bi bi-briefcase-fill me-1"></i>Expected Starting Salary</label>
+          <div class="input-group">
+            <span class="input-group-text" style="border-radius:10px 0 0 10px;">$</span>
+            <input type="number" class="form-control" id="salary" placeholder="e.g. 65000" min="1" required style="border-radius:0 10px 10px 0;" />
+          </div>
+          <p class="field-hint">Your annual gross salary before taxes.</p>
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label"><i class="bi bi-bank me-1"></i>Student Loan Balance</label>
+          <div class="input-group">
+            <span class="input-group-text" style="border-radius:10px 0 0 10px;">$</span>
+            <input type="number" class="form-control" id="loan_balance" placeholder="e.g. 9000" min="0" style="border-radius:0 10px 10px 0;" />
+          </div>
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label"><i class="bi bi-percent me-1"></i>Loan Interest Rate</label>
+          <div class="input-group">
+            <input type="number" class="form-control" id="loan_rate" placeholder="e.g. 5.5" min="0" max="30" step="0.1" style="border-radius:10px 0 0 10px;" />
+            <span class="input-group-text" style="border-radius:0 10px 10px 0;">%</span>
+          </div>
+          <p class="field-hint">Federal avg is ~5.5%. Check your servicer.</p>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label"><i class="bi bi-house-fill me-1"></i>Estimated Monthly Expenses</label>
+          <div class="input-group">
+            <span class="input-group-text" style="border-radius:10px 0 0 10px;">$</span>
+            <input type="number" class="form-control" id="monthly_expenses" placeholder="e.g. 2200" min="0" style="border-radius:0 10px 10px 0;" />
+          </div>
+          <p class="field-hint">Rent + food + transport + utilities. Before loan payments.</p>
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label"><i class="bi bi-building me-1"></i>Employer 401k Match</label>
+          <div class="input-group">
+            <input type="number" class="form-control" id="employer_401k_match" placeholder="e.g. 4" min="0" max="100" step="0.5" style="border-radius:10px 0 0 10px;" />
+            <span class="input-group-text" style="border-radius:0 10px 10px 0;">%</span>
+          </div>
+          <p class="field-hint">Leave 0 if unknown or no match.</p>
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label"><i class="bi bi-gift-fill me-1"></i>Signing Bonus</label>
+          <div class="input-group">
+            <span class="input-group-text" style="border-radius:10px 0 0 10px;">$</span>
+            <input type="number" class="form-control" id="signing_bonus" placeholder="e.g. 5000" min="0" style="border-radius:0 10px 10px 0;" />
+          </div>
+          <p class="field-hint">Leave 0 if none.</p>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary-grad w-100 mt-4" style="padding:.75rem;border-radius:10px;font-size:.95rem;">
+        <span id="btn-text"><i class="bi bi-arrow-right-circle-fill me-2"></i>Build My Plan</span>
+        <span id="btn-spin" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Saving…</span>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('onboard-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const salary = parseFloat(document.getElementById('salary').value);
+    if (!salary || salary <= 0) {
+      const box = document.getElementById('alert-box');
+      box.textContent = 'Please enter your starting salary.';
+      box.className = 'show';
+      return;
+    }
+
+    document.getElementById('btn-text').classList.add('d-none');
+    document.getElementById('btn-spin').classList.remove('d-none');
+
+    const payload = {
+      salary:              salary,
+      loan_balance:        parseFloat(document.getElementById('loan_balance').value) || 0,
+      loan_rate:           parseFloat(document.getElementById('loan_rate').value) || 5.5,
+      monthly_expenses:    parseFloat(document.getElementById('monthly_expenses').value) || 0,
+      employer_401k_match: parseFloat(document.getElementById('employer_401k_match').value) || 0,
+      signing_bonus:       parseFloat(document.getElementById('signing_bonus').value) || 0,
+    };
+
+    try {
+      const res = await fetch('/api/profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (res.ok) { window.location.href = data.redirect; }
+      else {
+        const box = document.getElementById('alert-box');
+        box.textContent = data.error || 'Something went wrong.';
+        box.className = 'show';
+      }
+    } catch {
+      const box = document.getElementById('alert-box');
+      box.textContent = 'Network error. Please try again.';
+      box.className = 'show';
+    } finally {
+      document.getElementById('btn-text').classList.remove('d-none');
+      document.getElementById('btn-spin').classList.add('d-none');
+    }
+  });
+</script>
+{% endblock %}

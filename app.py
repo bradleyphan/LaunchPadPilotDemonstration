@@ -1,60 +1,362 @@
 import os
-from flask import Flask, request, jsonify, render_template
+from functools import wraps
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
+from bson import ObjectId
 from dotenv import load_dotenv
 from datetime import datetime
+import bcrypt
 
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "launchpad-dev-secret-change-in-prod")
 
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client[os.getenv("DB_NAME", "launchpad")]
-profiles_collection = db["profiles"]
+users_col = db["users"]
+profiles_col = db["profiles"]
+roadmap_col = db["roadmap"]
 
+users_col.create_index("email", unique=True)
+
+
+def require_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("user_id"):
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+# ── Financial calculation engine ─────────────────────────────────────────────
+
+def life_path_projections(salary, loan_balance, loan_rate_pct, monthly_expenses, months=60):
+    monthly_income = salary / 12
+    surplus = monthly_income - monthly_expenses
+    monthly_loan_rate = (loan_rate_pct / 100) / 12
+    hysa_rate = 0.045 / 12
+    roth_rate = 0.07 / 12
+
+    if loan_balance > 0 and monthly_loan_rate > 0:
+        n = 120
+        r = monthly_loan_rate
+        min_payment = max(100, loan_balance * (r * (1 + r) ** n) / ((1 + r) ** n - 1))
+    else:
+        min_payment = 0
+
+    states = {
+        "aggressive": {"loan": float(loan_balance), "inv": 0.0},
+        "balanced":   {"loan": float(loan_balance), "inv": 0.0},
+        "investor":   {"loan": float(loan_balance), "inv": 0.0},
+    }
+    paths = {
+        "aggressive": {"label": "Aggressive Payoff", "color": "#0f62fe", "data": []},
+        "balanced":   {"label": "Balanced",           "color": "#6929c4", "data": []},
+        "investor":   {"label": "Investor Path",      "color": "#24a148", "data": []},
+    }
+
+    for _ in range(months):
+        s = states["aggressive"]
+        if s["loan"] > 0:
+            s["loan"] = max(0, s["loan"] * (1 + monthly_loan_rate) - surplus)
+            s["inv"] *= (1 + hysa_rate)
+        else:
+            s["inv"] = (s["inv"] + surplus) * (1 + hysa_rate)
+        paths["aggressive"]["data"].append(round(s["inv"] - s["loan"], 2))
+
+        s = states["balanced"]
+        if s["loan"] > 0:
+            extra = max(0, surplus - min_payment) / 2
+            s["loan"] = max(0, s["loan"] * (1 + monthly_loan_rate) - (min_payment + extra))
+            s["inv"] = (s["inv"] + extra) * (1 + roth_rate)
+        else:
+            s["inv"] = (s["inv"] + surplus) * (1 + roth_rate)
+        paths["balanced"]["data"].append(round(s["inv"] - s["loan"], 2))
+
+        s = states["investor"]
+        if s["loan"] > 0:
+            pmt = min(min_payment, s["loan"] * (1 + monthly_loan_rate))
+            s["loan"] = max(0, s["loan"] * (1 + monthly_loan_rate) - pmt)
+            s["inv"] = (s["inv"] + max(0, surplus - pmt)) * (1 + roth_rate)
+        else:
+            s["inv"] = (s["inv"] + surplus) * (1 + roth_rate)
+        paths["investor"]["data"].append(round(s["inv"] - s["loan"], 2))
+
+    return paths
+
+
+def paycheck_allocation(salary):
+    mo = salary / 12
+    return {
+        "monthly":    round(mo, 2),
+        "needs":      round(mo * 0.50, 2),
+        "debt":       round(mo * 0.20, 2),
+        "retirement": round(mo * 0.10, 2),
+        "lifestyle":  round(mo * 0.20, 2),
+    }
+
+
+def debt_optimizer(loan_balance, loan_rate_pct, extra_monthly, years=5):
+    months = years * 12
+    r = (loan_rate_pct / 100) / 12
+    hysa = 0.045 / 12
+    roth = 0.07 / 12
+
+    loan_a, interest_saved = float(loan_balance), 0.0
+    for _ in range(months):
+        interest = loan_a * r
+        interest_saved += interest
+        loan_a = max(0, loan_a + interest - extra_monthly)
+
+    loan_b, inv_b = float(loan_balance), 0.0
+    for _ in range(months):
+        loan_b = max(0, loan_b * (1 + r) - 100)
+        inv_b = (inv_b + extra_monthly) * (1 + hysa)
+
+    loan_c, inv_c = float(loan_balance), 0.0
+    for _ in range(months):
+        loan_c = max(0, loan_c * (1 + r) - 100)
+        inv_c = (inv_c + extra_monthly) * (1 + roth)
+
+    return {
+        "pay_debt": {"net_worth": round(-loan_a, 2),          "detail": round(interest_saved, 2), "label": "Pay Off Loan Faster"},
+        "hysa":     {"net_worth": round(inv_b - loan_b, 2),   "detail": round(inv_b, 2),          "label": "High-Yield Savings (4.5%)"},
+        "roth":     {"net_worth": round(inv_c - loan_c, 2),   "detail": round(inv_c, 2),          "label": "Roth IRA (7% avg)"},
+    }
+
+
+def generate_advice(profile):
+    salary = profile.get("salary", 0)
+    loan = profile.get("loan_balance", 0)
+    expenses = profile.get("monthly_expenses", 0)
+    match_pct = profile.get("employer_401k_match", 0)
+    signing = profile.get("signing_bonus", 0)
+    monthly = salary / 12
+    dti = loan / salary if salary > 0 else 0
+    surplus = monthly - expenses
+    emergency_target = expenses * 3
+
+    advice = [{
+        "icon": "shield-check-fill",
+        "title": "Build Your Emergency Fund First",
+        "body": f"Before extra debt payments or investing, save ${emergency_target:,.0f} (3 months of expenses) in a high-yield savings account earning ~4.5% APY. This is your financial safety net.",
+        "priority": "high"
+    }]
+
+    if dti < 0.15:
+        advice.append({
+            "icon": "graph-up-arrow",
+            "title": "Strong DTI — Shift Focus to Wealth Building",
+            "body": f"Your {dti:.0%} debt-to-income ratio is excellent. Max out your Roth IRA ($7,000/yr limit) before aggressively paying down low-interest student debt.",
+            "priority": "high"
+        })
+    elif dti < 0.35:
+        advice.append({
+            "icon": "arrow-left-right",
+            "title": "Balanced DTI — Split Your Surplus Strategically",
+            "body": f"At {dti:.0%} DTI, you're in a good position. Run the Balanced Path: split your ${surplus:,.0f}/month surplus between extra loan payments and Roth IRA contributions.",
+            "priority": "medium"
+        })
+    else:
+        advice.append({
+            "icon": "exclamation-triangle-fill",
+            "title": "High DTI — Debt Reduction is Priority One",
+            "body": f"A {dti:.0%} DTI limits your financial options. Focus on the Aggressive Payoff path to eliminate your ${loan:,.0f} debt faster, then redirect that payment to investing.",
+            "priority": "high"
+        })
+
+    if match_pct > 0:
+        free_money = salary * match_pct / 100
+        advice.append({
+            "icon": "currency-dollar",
+            "title": f"Capture ${free_money:,.0f}/yr in Free 401k Money",
+            "body": f"Contribute at least {match_pct}% (${free_money/12:,.0f}/mo) to your 401k to get the full employer match. This is a guaranteed 100% return — always do this before anything else.",
+            "priority": "high"
+        })
+
+    if signing > 0:
+        if dti > 0.2:
+            advice.append({
+                "icon": "gift-fill",
+                "title": f"Deploy Your ${signing:,.0f} Signing Bonus Wisely",
+                "body": f"With your current DTI, put 60% (${signing*0.6:,.0f}) toward your student loan immediately — this saves real interest. Keep 30% (${signing*0.3:,.0f}) as your emergency fund starter and 10% for yourself.",
+                "priority": "medium"
+            })
+        else:
+            advice.append({
+                "icon": "gift-fill",
+                "title": f"Invest Your ${signing:,.0f} Signing Bonus",
+                "body": f"Your DTI is healthy. Put up to $7,000 into a Roth IRA and the rest into HYSA. Investing a lump sum early maximizes compounding — don't spend it on lifestyle upgrades.",
+                "priority": "medium"
+            })
+
+    if surplus < 500:
+        advice.append({
+            "icon": "wallet2",
+            "title": "Tight Cash Flow — Audit Your Monthly Expenses",
+            "body": f"Only ${surplus:,.0f}/month in surplus leaves little margin. Review your top 3 expenses (rent, subscriptions, food). Cutting $200/month invested for 30 years at 7% = ~$24,000.",
+            "priority": "medium"
+        })
+
+    return advice
+
+
+# ── Page routes ───────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
     return render_template("index.html")
 
 
-@app.route("/add_profile", methods=["POST"])
-def add_profile():
-    data = request.get_json()
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        data = request.get_json()
+        name = data.get("name", "").strip()
+        email = data.get("email", "").strip().lower()
+        password = data.get("password", "")
 
-    name = data.get("name", "").strip()
-    loan_balance = data.get("loan_balance")
-    starting_salary = data.get("starting_salary")
+        if not name or not email or not password:
+            return jsonify({"error": "All fields are required."}), 400
+        if len(password) < 6:
+            return jsonify({"error": "Password must be at least 6 characters."}), 400
 
-    if not name or loan_balance is None or starting_salary is None:
-        return jsonify({"error": "All fields are required."}), 400
+        pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        try:
+            result = users_col.insert_one({
+                "name": name,
+                "email": email,
+                "password": pw_hash,
+                "created_at": datetime.utcnow().isoformat(),
+            })
+            session["user_id"] = str(result.inserted_id)
+            session["user_name"] = name
+            return jsonify({"redirect": url_for("onboard")}), 200
+        except DuplicateKeyError:
+            return jsonify({"error": "An account with that email already exists."}), 409
 
-    try:
-        loan_balance = float(loan_balance)
-        starting_salary = float(starting_salary)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Loan balance and salary must be valid numbers."}), 400
-
-    profile = {
-        "name": name,
-        "loan_balance": loan_balance,
-        "starting_salary": starting_salary,
-        "debt_to_income_ratio": round(loan_balance / starting_salary, 4) if starting_salary > 0 else None,
-        "created_at": datetime.utcnow().isoformat(),
-    }
-
-    result = profiles_collection.insert_one(profile)
-    profile["_id"] = str(result.inserted_id)
-
-    return jsonify({"message": "Profile saved successfully.", "profile": profile}), 201
+    return render_template("auth.html", mode="register")
 
 
-@app.route("/get_profiles", methods=["GET"])
-def get_profiles():
-    profiles = list(profiles_collection.find().sort("created_at", -1))
-    for p in profiles:
-        p["_id"] = str(p["_id"])
-    return jsonify(profiles), 200
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        data = request.get_json()
+        email = data.get("email", "").strip().lower()
+        password = data.get("password", "")
+        user = users_col.find_one({"email": email})
+
+        if not user or not bcrypt.checkpw(password.encode(), user["password"].encode()):
+            return jsonify({"error": "Invalid email or password."}), 401
+
+        session["user_id"] = str(user["_id"])
+        session["user_name"] = user["name"]
+        profile = profiles_col.find_one({"user_id": str(user["_id"])})
+        dest = url_for("dashboard") if profile else url_for("onboard")
+        return jsonify({"redirect": dest}), 200
+
+    return render_template("auth.html", mode="login")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("index"))
+
+
+@app.route("/onboard")
+@require_auth
+def onboard():
+    return render_template("onboard.html")
+
+
+@app.route("/dashboard")
+@require_auth
+def dashboard():
+    profile = profiles_col.find_one({"user_id": session["user_id"]})
+    if not profile:
+        return redirect(url_for("onboard"))
+    return render_template("dashboard.html", user_name=session.get("user_name", ""))
+
+
+# ── API routes ────────────────────────────────────────────────────────────────
+
+@app.route("/api/profile", methods=["GET", "POST"])
+@require_auth
+def api_profile():
+    if request.method == "POST":
+        data = request.get_json()
+        profile = {
+            "user_id":             session["user_id"],
+            "salary":              float(data.get("salary", 0)),
+            "loan_balance":        float(data.get("loan_balance", 0)),
+            "loan_rate":           float(data.get("loan_rate", 5.5)),
+            "monthly_expenses":    float(data.get("monthly_expenses", 0)),
+            "employer_401k_match": float(data.get("employer_401k_match", 0)),
+            "signing_bonus":       float(data.get("signing_bonus", 0)),
+            "updated_at":          datetime.utcnow().isoformat(),
+        }
+        profiles_col.update_one({"user_id": session["user_id"]}, {"$set": profile}, upsert=True)
+        return jsonify({"redirect": url_for("dashboard")}), 200
+
+    profile = profiles_col.find_one({"user_id": session["user_id"]}, {"_id": 0})
+    return (jsonify(profile), 200) if profile else (jsonify({}), 404)
+
+
+@app.route("/api/life-paths")
+@require_auth
+def api_life_paths():
+    p = profiles_col.find_one({"user_id": session["user_id"]})
+    if not p:
+        return jsonify({"error": "No profile"}), 404
+    return jsonify(life_path_projections(p["salary"], p["loan_balance"], p.get("loan_rate", 5.5), p["monthly_expenses"])), 200
+
+
+@app.route("/api/paycheck")
+@require_auth
+def api_paycheck():
+    p = profiles_col.find_one({"user_id": session["user_id"]})
+    if not p:
+        return jsonify({"error": "No profile"}), 404
+    return jsonify(paycheck_allocation(p["salary"])), 200
+
+
+@app.route("/api/debt-optimizer")
+@require_auth
+def api_debt_optimizer():
+    p = profiles_col.find_one({"user_id": session["user_id"]})
+    if not p:
+        return jsonify({"error": "No profile"}), 404
+    extra = (p["salary"] / 12) * 0.10
+    return jsonify(debt_optimizer(p["loan_balance"], p.get("loan_rate", 5.5), extra)), 200
+
+
+@app.route("/api/advice")
+@require_auth
+def api_advice():
+    p = profiles_col.find_one({"user_id": session["user_id"]}, {"_id": 0})
+    if not p:
+        return jsonify({"error": "No profile"}), 404
+    return jsonify(generate_advice(p)), 200
+
+
+@app.route("/api/roadmap", methods=["GET", "POST"])
+@require_auth
+def api_roadmap():
+    if request.method == "POST":
+        data = request.get_json()
+        task_id = data.get("task_id")
+        op = "$addToSet" if data.get("completed", True) else "$pull"
+        roadmap_col.update_one({"user_id": session["user_id"]}, {op: {"completed": task_id}}, upsert=True)
+        return jsonify({"ok": True}), 200
+
+    doc = roadmap_col.find_one({"user_id": session["user_id"]})
+    return jsonify({"completed": doc.get("completed", []) if doc else []}), 200
 
 
 @app.route("/health")

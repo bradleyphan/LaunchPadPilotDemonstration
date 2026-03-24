@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — LaunchPad Pilot{% endblock %}
+
+{% block styles %}
+body { display: flex; flex-direction: column; overflow-x: hidden; }
+.topbar {
+  background: rgba(10,14,26,.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: .85rem 0;
+  position: sticky; top: 0; z-index: 100;
+}
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  min-height: calc(100vh - 57px);
+  padding: 1.5rem 1rem;
+  position: sticky; top: 57px;
+  height: calc(100vh - 57px);
+  overflow-y: auto;
+}
+.sidebar-label { font-size: .65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: .5rem .75rem; margin-top: .5rem; }
+.nav-item-btn {
+  display: flex; align-items: center; gap: .65rem;
+  padding: .6rem .75rem;
+  border-radius: 8px; border: none;
+  background: transparent; color: var(--muted);
+  font-size: .85rem; font-weight: 500;
+  width: 100%; text-align: left;
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.nav-item-btn:hover { background: var(--bg-card-2); color: #e2e8f0; }
+.nav-item-btn.active { background: rgba(15,98,254,.12); color: var(--primary); font-weight: 600; }
+.nav-item-btn i { font-size: 1rem; width: 20px; text-align: center; }
+.main-content { flex: 1; padding: 2rem; min-width: 0; }
+.section-panel { display: none; }
+.section-panel.active { display: block; }
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+}
+.stat-label { font-size: .72rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+.stat-value { font-size: 1.7rem; font-weight: 800; color: #fff; letter-spacing: -1px; }
+.stat-sub { font-size: .75rem; color: var(--muted); margin-top: .15rem; }
+.chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; }
+.chart-title { font-size: 1rem; font-weight: 700; margin-bottom: .25rem; }
+.chart-sub { font-size: .8rem; color: var(--muted); margin-bottom: 1.25rem; }
+.advice-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  display: flex; gap: 1rem; align-items: flex-start;
+}
+.advice-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.advice-title { font-size: .9rem; font-weight: 700; margin-bottom: .3rem; }
+.advice-body { font-size: .82rem; color: var(--muted); line-height: 1.6; margin: 0; }
+.roadmap-month { margin-bottom: 1.5rem; }
+.roadmap-month-title { font-size: .78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--primary); margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
+.task-item {
+  display: flex; align-items: flex-start; gap: .75rem;
+  padding: .65rem .85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  margin-bottom: .5rem;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.task-item:hover { border-color: rgba(15,98,254,.3); }
+.task-item.done { opacity: .55; }
+.task-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background .15s, border-color .15s; margin-top: 1px; }
+.task-item.done .task-check { background: var(--success); border-color: var(--success); }
+.task-text { font-size: .83rem; color: #cbd5e1; line-height: 1.5; }
+.task-item.done .task-text { text-decoration: line-through; color: var(--muted); }
+.optimizer-row { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+.optimizer-label { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: .5rem; }
+.optimizer-value { font-size: 1.4rem; font-weight: 800; letter-spacing: -.5px; }
+.section-header { margin-bottom: 1.5rem; }
+.section-header h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: .25rem; }
+.section-header p { font-size: .85rem; color: var(--muted); margin: 0; }
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .mobile-nav { display: flex !important; }
+}
+.mobile-nav { display: none; overflow-x: auto; gap: .5rem; padding: .75rem 1rem; background: var(--bg-card); border-bottom: 1px solid var(--border); }
+.mobile-nav-btn { white-space: nowrap; font-size: .78rem; font-weight: 600; padding: .4rem .9rem; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
+.mobile-nav-btn.active { background: rgba(15,98,254,.12); color: var(--primary); border-color: rgba(15,98,254,.3); }
+{% endblock %}
+
+{% block body %}
+<!-- Topbar -->
+<nav class="topbar">
+  <div class="container-fluid px-3 d-flex justify-content-between align-items-center">
+    <a href="/" style="font-weight:800;color:#fff;text-decoration:none;font-size:1.05rem;">
+      <i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--primary)"></i>Launchpad<span style="color:var(--primary)">Pilot</span>
+    </a>
+    <div class="d-flex align-items-center gap-3">
+      <span style="font-size:.83rem;color:var(--muted);">
+        <i class="bi bi-person-circle me-1"></i>{{ user_name }}
+      </span>
+      <a href="/onboard" style="font-size:.78rem;color:var(--muted);text-decoration:none;"><i class="bi bi-pencil-fill me-1"></i>Edit Profile</a>
+      <a href="/logout" style="font-size:.78rem;color:var(--muted);text-decoration:none;"><i class="bi bi-box-arrow-right me-1"></i>Log Out</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Nav -->
+<div class="mobile-nav">
+  <button class="mobile-nav-btn active" onclick="showSection('overview', this)"><i class="bi bi-speedometer2 me-1"></i>Overview</button>
+  <button class="mobile-nav-btn" onclick="showSection('lifepaths', this)"><i class="bi bi-diagram-3 me-1"></i>Life Paths</button>
+  <button class="mobile-nav-btn" onclick="showSection('optimizer', this)"><i class="bi bi-calculator me-1"></i>Optimizer</button>
+  <button class="mobile-nav-btn" onclick="showSection('roadmap', this)"><i class="bi bi-calendar3 me-1"></i>Roadmap</button>
+  <button class="mobile-nav-btn" onclick="showSection('advisor', this)"><i class="bi bi-cpu me-1"></i>AI Advisor</button>
+</div>
+
+<!-- Body -->
+<div class="d-flex">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Main</div>
+    <button class="nav-item-btn active" onclick="showSection('overview', this)" id="nav-overview">
+      <i class="bi bi-speedometer2"></i> Overview
+    </button>
+    <button class="nav-item-btn" onclick="showSection('lifepaths', this)" id="nav-lifepaths">
+      <i class="bi bi-diagram-3-fill"></i> Life Paths
+    </button>
+    <button class="nav-item-btn" onclick="showSection('optimizer', this)" id="nav-optimizer">
+      <i class="bi bi-calculator-fill"></i> Debt Optimizer
+    </button>
+    <div class="sidebar-label">Tools</div>
+    <button class="nav-item-btn" onclick="showSection('roadmap', this)" id="nav-roadmap">
+      <i class="bi bi-calendar3"></i> First-Year Roadmap
+    </button>
+    <button class="nav-item-btn" onclick="showSection('advisor', this)" id="nav-advisor">
+      <i class="bi bi-cpu-fill"></i> AI Advisor
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ── Overview ─────────────────────────────────────────────────────── -->
+    <div class="section-panel active" id="panel-overview">
+      <div class="section-header">
+        <h2>Overview</h2>
+        <p>Your key financial metrics and paycheck allocation at a glance.</p>
+      </div>
+      <div class="row g-3 mb-4" id="stat-cards">
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Monthly Income</div><div class="stat-value" id="stat-monthly">—</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Loan Balance</div><div class="stat-value" id="stat-loan">—</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">DTI Ratio</div><div class="stat-value" id="stat-dti">—</div><div class="stat-sub" id="stat-dti-label"></div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Monthly Surplus</div><div class="stat-value" id="stat-surplus">—</div></div></div>
+      </div>
+      <div class="row g-3">
+        <div class="col-lg-5">
+          <div class="chart-card h-100">
+            <div class="chart-title">Paycheck Allocation</div>
+            <div class="chart-sub">Where your monthly income should go</div>
+            <canvas id="paycheckChart" height="220"></canvas>
+            <div id="paycheck-legend" class="mt-3"></div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="chart-card h-100">
+            <div class="chart-title">Emergency Fund Target</div>
+            <div class="chart-sub">3 months of expenses as your financial safety net</div>
+            <div class="row g-3 mt-1" id="emergency-cards"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Life Paths ──────────────────────────────────────────────────── -->
+    <div class="section-panel" id="panel-lifepaths">
+      <div class="section-header">
+        <h2>Life Path Simulations</h2>
+        <p>Your projected 5-year net worth across three distinct financial strategies.</p>
+      </div>
+      <div class="chart-card mb-4">
+        <div class="chart-title">5-Year Net Worth Projection</div>
+        <div class="chart-sub">Monthly net worth (investments minus remaining debt) for each path</div>
+        <canvas id="lifepathChart" height="300"></canvas>
+      </div>
+      <div class="row g-3" id="path-summary-cards"></div>
+    </div>
+
+    <!-- ── Debt Optimizer ──────────────────────────────────────────────── -->
+    <div class="section-panel" id="panel-optimizer">
+      <div class="section-header">
+        <h2>Debt vs. Growth Optimizer</h2>
+        <p>What happens to your net worth in 5 years depending on where you put your extra monthly income?</p>
+      </div>
+      <div class="chart-card mb-4">
+        <div class="chart-title">5-Year Net Worth by Strategy</div>
+        <div class="chart-sub">Using 10% of your monthly income as extra allocation</div>
+        <canvas id="optimizerChart" height="260"></canvas>
+      </div>
+      <div class="row g-3" id="optimizer-cards"></div>
+    </div>
+
+    <!-- ── First Year Roadmap ──────────────────────────────────────────── -->
+    <div class="section-panel" id="panel-roadmap">
+      <div class="section-header">
+        <h2>First-Year Roadmap</h2>
+        <p>Your month-by-month financial checklist for the first 12 months after graduation.</p>
+      </div>
+      <div id="roadmap-progress-bar" class="mb-4">
+        <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
+          <span style="color:var(--muted);">Progress</span>
+          <span id="roadmap-pct" style="color:var(--primary);font-weight:600;">0%</span>
+        </div>
+        <div style="background:var(--bg-card-2);border-radius:20px;height:8px;">
+          <div id="roadmap-bar" style="background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:20px;height:8px;width:0%;transition:width .4s;"></div>
+        </div>
+      </div>
+      <div id="roadmap-container"></div>
+    </div>
+
+    <!-- ── AI Advisor ──────────────────────────────────────────────────── -->
+    <div class="section-panel" id="panel-advisor">
+      <div class="section-header">
+        <h2>AI Financial Advisor</h2>
+        <p>Personalized, actionable advice based on your specific salary, debt, and financial profile.</p>
+      </div>
+      <div id="advice-container" class="d-flex flex-column gap-3">
+        <div class="text-center py-4" style="color:var(--muted);"><span class="spinner-border spinner-border-sm me-2"></span>Generating your advice…</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+const fmtK = n => n >= 1000 ? '$' + (n/1000).toFixed(1) + 'k' : fmt(n);
+
+Chart.defaults.color = '#8b9cbf';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item-btn, .mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const sidebarBtn = document.getElementById('nav-' + id);
+  if (sidebarBtn) sidebarBtn.classList.add('active');
+}
+
+// ── Overview ─────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  const [profRes, payRes] = await Promise.all([fetch('/api/profile'), fetch('/api/paycheck')]);
+  const prof = await profRes.json();
+  const pay  = await payRes.json();
+
+  const dti = prof.loan_balance / prof.salary;
+  const surplus = pay.monthly - prof.monthly_expenses;
+  const dtiLabel = dti < 0.15 ? 'Excellent' : dti < 0.35 ? 'Manageable' : 'High — act fast';
+  const dtiColor = dti < 0.15 ? '#4ade80' : dti < 0.35 ? '#fbbf24' : '#f87171';
+
+  document.getElementById('stat-monthly').textContent  = fmtK(pay.monthly);
+  document.getElementById('stat-loan').textContent     = fmtK(prof.loan_balance);
+  document.getElementById('stat-dti').innerHTML        = `<span style="color:${dtiColor}">${(dti*100).toFixed(0)}%</span>`;
+  document.getElementById('stat-dti-label').textContent = dtiLabel;
+  document.getElementById('stat-surplus').textContent  = fmtK(Math.max(0, surplus));
+
+  // Donut chart
+  new Chart(document.getElementById('paycheckChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Needs (50%)', 'Debt (20%)', 'Retirement (10%)', 'Lifestyle (20%)'],
+      datasets: [{
+        data: [pay.needs, pay.debt, pay.retirement, pay.lifestyle],
+        backgroundColor: ['#0f62fe','#6929c4','#24a148','#f59e0b'],
+        borderWidth: 0, hoverOffset: 6,
+      }]
+    },
+    options: {
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}/mo` } } },
+    }
+  });
+
+  document.getElementById('paycheck-legend').innerHTML = [
+    ['#0f62fe', `Needs`, fmt(pay.needs)],
+    ['#6929c4', `Debt`, fmt(pay.debt)],
+    ['#24a148', `Retirement`, fmt(pay.retirement)],
+    ['#f59e0b', `Lifestyle`, fmt(pay.lifestyle)],
+  ].map(([c,l,v]) => `<div class="d-flex justify-content-between align-items-center mb-1">
+    <div class="d-flex align-items-center gap-2"><div style="width:10px;height:10px;border-radius:3px;background:${c}"></div><span style="font-size:.8rem;color:#cbd5e1">${l}</span></div>
+    <span style="font-size:.8rem;font-weight:600;color:#e2e8f0">${v}<span style="color:var(--muted);font-weight:400">/mo</span></span>
+  </div>`).join('');
+
+  const emergencyTarget = prof.monthly_expenses * 3;
+  document.getElementById('emergency-cards').innerHTML = `
+    <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Emergency Target</div><div class="optimizer-value" style="color:#f59e0b">${fmt(emergencyTarget)}</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">3 months of expenses</div></div></div>
+    <div class="col-sm-6"><div class="optimizer-row"><div class="optimizer-label">Monthly to Save</div><div class="optimizer-value" style="color:var(--primary)">${fmt(emergencyTarget/6)}</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">to reach goal in 6 months</div></div></div>
+    <div class="col-12"><div class="optimizer-row"><div class="optimizer-label">Recommended HYSA Rate</div><div class="optimizer-value" style="color:#4ade80">4.50% APY</div><div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">High-yield savings — SoFi, Marcus, Ally</div></div></div>`;
+}
+
+// ── Life Paths ────────────────────────────────────────────────────────────────
+async function loadLifePaths() {
+  const res = await fetch('/api/life-paths');
+  const paths = await res.json();
+  const labels = Array.from({length: 60}, (_, i) => i % 12 === 0 ? `Yr ${i/12+1}` : '');
+
+  new Chart(document.getElementById('lifepathChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: Object.values(paths).map(p => ({
+        label: p.label,
+        data: p.data,
+        borderColor: p.color,
+        backgroundColor: p.color + '15',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: false,
+      }))
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` } } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { ticks: { callback: v => fmtK(v) } }
+      }
+    }
+  });
+
+  const colors = { aggressive: '#0f62fe', balanced: '#6929c4', investor: '#24a148' };
+  const descs  = {
+    aggressive: 'Put all surplus toward debt until paid off, then invest everything in HYSA.',
+    balanced:   'Split surplus: extra debt payment + Roth IRA contributions simultaneously.',
+    investor:   'Pay loan minimum only; invest all remaining surplus in Roth IRA from day one.'
+  };
+
+  document.getElementById('path-summary-cards').innerHTML = Object.entries(paths).map(([key, p]) => `
+    <div class="col-md-4">
+      <div class="chart-card h-100">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+          <div style="width:12px;height:12px;border-radius:3px;background:${colors[key]};flex-shrink:0"></div>
+          <span style="font-weight:700;font-size:.9rem">${p.label}</span>
+        </div>
+        <p style="font-size:.78rem;color:var(--muted);margin-bottom:.75rem">${descs[key]}</p>
+        <div style="font-size:1.4rem;font-weight:800;color:${colors[key]}">${fmt(p.data[59])}</div>
+        <div style="font-size:.75rem;color:var(--muted)">Net worth at Year 5</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Debt Optimizer ────────────────────────────────────────────────────────────
+async function loadOptimizer() {
+  const res = await fetch('/api/debt-optimizer');
+  const data = await res.json();
+  const labels = Object.values(data).map(d => d.label);
+  const values = Object.values(data).map(d => d.net_worth);
+  const colors = ['#0f62fe', '#24a148', '#6929c4'];
+
+  new Chart(document.getElementById('optimizerChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: '5-Year Net Worth', data: values, backgroundColor: colors.map(c => c+'bb'), borderColor: colors, borderWidth: 2, borderRadius: 8 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` Net Worth: ${fmt(ctx.raw)}` } } },
+      scales: { y: { ticks: { callback: v => fmtK(v) } } }
+    }
+  });
+
+  const icons    = ['arrow-up-circle-fill', 'piggy-bank-fill', 'graph-up-arrow'];
+  const subtexts = [
+    d => `Saves ${fmt(d.detail)} in interest`,
+    d => `HYSA balance: ${fmt(d.detail)}`,
+    d => `Roth IRA balance: ${fmt(d.detail)}`,
+  ];
+  document.getElementById('optimizer-cards').innerHTML = Object.values(data).map((d, i) => `
+    <div class="col-md-4">
+      <div class="optimizer-row">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="bi bi-${icons[i]}" style="color:${colors[i]};font-size:1.1rem"></i>
+          <span style="font-weight:700;font-size:.88rem">${d.label}</span>
+        </div>
+        <div class="optimizer-value" style="color:${colors[i]}">${fmt(d.net_worth)}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">5-yr net worth &middot; ${subtexts[i](d)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Roadmap ───────────────────────────────────────────────────────────────────
+const ROADMAP = [
+  { month: 1, title: 'Month 1 — Foundation', tasks: [
+    { id: 'm1t1', text: 'Open a checking account at a fee-free bank (Ally, SoFi, Schwab)' },
+    { id: 'm1t2', text: 'Set up direct deposit for your first paycheck' },
+    { id: 'm1t3', text: 'Enroll in employer health insurance within your 30-day window' },
+    { id: 'm1t4', text: 'Review and understand your pay stub (taxes, deductions, net pay)' },
+  ]},
+  { month: 2, title: 'Month 2 — Retirement', tasks: [
+    { id: 'm2t1', text: 'Contribute at least enough to your 401k to get the full employer match' },
+    { id: 'm2t2', text: 'Open a Roth IRA account (Fidelity or Vanguard)' },
+    { id: 'm2t3', text: 'Set up automatic monthly contribution to Roth IRA' },
+  ]},
+  { month: 3, title: 'Month 3 — Emergency Fund', tasks: [
+    { id: 'm3t1', text: 'Open a High-Yield Savings Account (HYSA) with 4%+ APY' },
+    { id: 'm3t2', text: 'Set up auto-transfer to HYSA every payday' },
+    { id: 'm3t3', text: 'Target: 1 month of expenses saved by end of month' },
+  ]},
+  { month: 4, title: 'Month 4 — Debt Strategy', tasks: [
+    { id: 'm4t1', text: 'Log in to your student loan servicer and confirm your repayment plan' },
+    { id: 'm4t2', text: 'Set up autopay (0.25% rate discount on federal loans)' },
+    { id: 'm4t3', text: 'Decide: Aggressive Payoff, Balanced, or Investor Path' },
+  ]},
+  { month: 6, title: 'Month 6 — Mid-Year Check', tasks: [
+    { id: 'm6t1', text: 'Review your budget — are you hitting your savings targets?' },
+    { id: 'm6t2', text: 'Emergency fund should be at 1.5+ months of expenses' },
+    { id: 'm6t3', text: 'Check your 401k allocation and rebalance if needed' },
+    { id: 'm6t4', text: 'Consider asking for a 6-month performance review' },
+  ]},
+  { month: 9, title: 'Month 9 — Optimize', tasks: [
+    { id: 'm9t1', text: 'Emergency fund at 2.5+ months — almost there' },
+    { id: 'm9t2', text: 'Review subscriptions and recurring expenses — cancel unused ones' },
+    { id: 'm9t3', text: 'Start tracking your net worth monthly (Monarch Money or spreadsheet)' },
+  ]},
+  { month: 12, title: 'Month 12 — Year One Complete', tasks: [
+    { id: 'm12t1', text: 'Emergency fund fully funded (3 months of expenses)' },
+    { id: 'm12t2', text: 'Calculate how much loan principal you\'ve paid down this year' },
+    { id: 'm12t3', text: 'Calculate your total Roth IRA + 401k balance' },
+    { id: 'm12t4', text: 'Request a raise — you now have a year of performance data' },
+    { id: 'm12t5', text: 'File your taxes (first year as a full-time employee)' },
+  ]},
+];
+
+let completedTasks = new Set();
+
+async function loadRoadmap() {
+  const res = await fetch('/api/roadmap');
+  const data = await res.json();
+  completedTasks = new Set(data.completed || []);
+  renderRoadmap();
+}
+
+function renderRoadmap() {
+  const total = ROADMAP.reduce((s, m) => s + m.tasks.length, 0);
+  const done  = completedTasks.size;
+  const pct   = Math.round((done / total) * 100);
+  document.getElementById('roadmap-pct').textContent = pct + '%';
+  document.getElementById('roadmap-bar').style.width = pct + '%';
+
+  document.getElementById('roadmap-container').innerHTML = ROADMAP.map(month => `
+    <div class="roadmap-month">
+      <div class="roadmap-month-title">
+        <i class="bi bi-calendar-check"></i> ${month.title}
+        <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;font-size:.73rem;">
+          ${month.tasks.filter(t => completedTasks.has(t.id)).length}/${month.tasks.length} done
+        </span>
+      </div>
+      ${month.tasks.map(task => `
+        <div class="task-item ${completedTasks.has(task.id) ? 'done' : ''}" onclick="toggleTask('${task.id}', this)">
+          <div class="task-check">${completedTasks.has(task.id) ? '<i class="bi bi-check-lg" style="color:#fff;font-size:.7rem"></i>' : ''}</div>
+          <span class="task-text">${task.text}</span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+async function toggleTask(taskId, el) {
+  const isDone = completedTasks.has(taskId);
+  if (isDone) completedTasks.delete(taskId); else completedTasks.add(taskId);
+  await fetch('/api/roadmap', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ task_id: taskId, completed: !isDone }) });
+  renderRoadmap();
+}
+
+// ── AI Advisor ────────────────────────────────────────────────────────────────
+async function loadAdvice() {
+  const res  = await fetch('/api/advice');
+  const list = await res.json();
+  const priorityColors = { high: ['rgba(239,68,68,.12)', '#f87171'], medium: ['rgba(245,158,11,.1)', '#fbbf24'] };
+
+  document.getElementById('advice-container').innerHTML = list.map(a => {
+    const [bg, color] = priorityColors[a.priority] || priorityColors.medium;
+    return `<div class="advice-card">
+      <div class="advice-icon" style="background:${bg};color:${color}"><i class="bi bi-${a.icon}"></i></div>
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="advice-title">${a.title}</span>
+          <span class="badge-pill badge-${a.priority}">${a.priority === 'high' ? 'Priority' : 'Suggested'}</span>
+        </div>
+        <p class="advice-body">${a.body}</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadOverview();
+  loadLifePaths();
+  loadOptimizer();
+  loadRoadmap();
+  loadAdvice();
+})();
+</script>
+{% endblock %}

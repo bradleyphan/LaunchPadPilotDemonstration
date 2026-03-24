@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'register' %}Create Account{% else %}Log In{% endif %} — LaunchPad Pilot{% endblock %}
+
+{% block styles %}
+body { display: flex; flex-direction: column; min-height: 100vh; }
+.auth-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+.auth-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+}
+.auth-logo { font-size: 1.15rem; font-weight: 800; color: #fff; text-decoration: none; display: block; margin-bottom: 2rem; }
+.auth-logo span { color: var(--primary); }
+.auth-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: .35rem; }
+.auth-sub { font-size: .875rem; color: var(--muted); margin-bottom: 1.75rem; }
+.tab-switch {
+  display: flex;
+  background: var(--bg-card-2);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 1.75rem;
+  gap: 4px;
+}
+.tab-btn {
+  flex: 1;
+  border: none;
+  border-radius: 7px;
+  padding: .5rem;
+  font-size: .83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  background: transparent;
+  color: var(--muted);
+}
+.tab-btn.active { background: var(--bg-card); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+#alert-box { display: none; border-radius: 8px; font-size: .83rem; font-weight: 500; padding: .65rem 1rem; margin-bottom: 1rem; }
+#alert-box.show { display: block; }
+.divider { text-align: center; font-size: .75rem; color: var(--muted); margin: 1.25rem 0; position: relative; }
+.divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border); }
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+.auth-switch { font-size: .83rem; color: var(--muted); text-align: center; margin-top: 1.25rem; }
+.auth-switch a { color: var(--primary); text-decoration: none; font-weight: 600; }
+{% endblock %}
+
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a href="/" class="auth-logo"><i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--primary)"></i>Launchpad<span>Pilot</span></a>
+
+    <div class="tab-switch">
+      <button class="tab-btn {% if mode == 'login' %}active{% endif %}" id="tab-login" onclick="switchTab('login')">Log In</button>
+      <button class="tab-btn {% if mode == 'register' %}active{% endif %}" id="tab-register" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <!-- Login Form -->
+    <form id="login-form" class="{% if mode == 'register' %}d-none{% endif %}" novalidate>
+      <div class="mb-3">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="login-email" placeholder="you@email.com" />
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" id="login-password" placeholder="••••••••" />
+      </div>
+      <button type="submit" class="btn btn-primary-grad w-100" style="padding:.7rem;border-radius:10px;">
+        <span id="login-text"><i class="bi bi-box-arrow-in-right me-2"></i>Log In</span>
+        <span id="login-spin" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Signing in…</span>
+      </button>
+    </form>
+
+    <!-- Register Form -->
+    <form id="register-form" class="{% if mode == 'login' %}d-none{% endif %}" novalidate>
+      <div class="mb-3">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-control" id="reg-name" placeholder="Jordan Smith" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="reg-email" placeholder="you@email.com" />
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Password <span style="color:var(--muted);font-weight:400;">(min 6 chars)</span></label>
+        <input type="password" class="form-control" id="reg-password" placeholder="••••••••" />
+      </div>
+      <button type="submit" class="btn btn-primary-grad w-100" style="padding:.7rem;border-radius:10px;">
+        <span id="reg-text"><i class="bi bi-rocket-takeoff-fill me-2"></i>Create Account</span>
+        <span id="reg-spin" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Creating…</span>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function switchTab(tab) {
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+    document.getElementById('login-form').classList.toggle('d-none', tab !== 'login');
+    document.getElementById('register-form').classList.toggle('d-none', tab !== 'register');
+    document.getElementById('alert-box').className = '';
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert-box');
+    el.textContent = msg;
+    el.className = `show ${type === 'success' ? 'alert alert-success' : ''}`;
+    el.style.cssText = type === 'error'
+      ? 'display:block;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;'
+      : 'display:block;background:rgba(36,161,72,.1);border:1px solid rgba(36,161,72,.3);color:#4ade80;';
+  }
+
+  async function submitForm(url, payload, textEl, spinEl) {
+    textEl.classList.add('d-none');
+    spinEl.classList.remove('d-none');
+    try {
+      const res = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (res.ok) { window.location.href = data.redirect; }
+      else { showAlert(data.error || 'Something went wrong.', 'error'); }
+    } catch { showAlert('Network error. Please try again.', 'error'); }
+    finally { textEl.classList.remove('d-none'); spinEl.classList.add('d-none'); }
+  }
+
+  document.getElementById('login-form').addEventListener('submit', e => {
+    e.preventDefault();
+    submitForm('/login', {
+      email: document.getElementById('login-email').value,
+      password: document.getElementById('login-password').value
+    }, document.getElementById('login-text'), document.getElementById('login-spin'));
+  });
+
+  document.getElementById('register-form').addEventListener('submit', e => {
+    e.preventDefault();
+    submitForm('/register', {
+      name: document.getElementById('reg-name').value,
+      email: document.getElementById('reg-email').value,
+      password: document.getElementById('reg-password').value
+    }, document.getElementById('reg-text'), document.getElementById('reg-spin'));
+  });
+</script>
+{% endblock %}
