@@ -2,7 +2,7 @@
 {% block title %}Dashboard — LaunchPad Pilot{% endblock %}
 
 {% block styles %}
-body { display: flex; flex-direction: column; overflow-x: hidden; }
+body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
 .topbar {
   background: rgba(10,14,26,.9);
   backdrop-filter: blur(12px);
@@ -33,14 +33,14 @@ body { display: flex; flex-direction: column; overflow-x: hidden; }
 .nav-item-btn:hover { background: var(--bg-card-2); color: #e2e8f0; }
 .nav-item-btn.active { background: rgba(15,98,254,.12); color: var(--primary); font-weight: 600; }
 .nav-item-btn i { font-size: 1rem; width: 20px; text-align: center; }
-.main-content { flex: 1; padding: 2rem; min-width: 0; }
+.main-content { flex: 1; padding: 1.5rem 2rem; min-width: 0; height: calc(100vh - 57px); overflow-y: auto; }
 .section-panel { display: none; }
 .section-panel.active { display: block; }
 .stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.25rem;
 }
 .stat-label { font-size: .72rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
 .stat-value { font-size: 1.7rem; font-weight: 800; color: #fff; letter-spacing: -1px; }
@@ -79,9 +79,9 @@ body { display: flex; flex-direction: column; overflow-x: hidden; }
 .optimizer-row { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
 .optimizer-label { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: .5rem; }
 .optimizer-value { font-size: 1.4rem; font-weight: 800; letter-spacing: -.5px; }
-.section-header { margin-bottom: 1.5rem; }
-.section-header h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: .25rem; }
-.section-header p { font-size: .85rem; color: var(--muted); margin: 0; }
+.section-header { margin-bottom: 1rem; }
+.section-header h2 { font-size: 1.3rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: .15rem; }
+.section-header p { font-size: .82rem; color: var(--muted); margin: 0; }
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .mobile-nav { display: flex !important; }
@@ -160,7 +160,7 @@ body { display: flex; flex-direction: column; overflow-x: hidden; }
           <div class="chart-card h-100">
             <div class="chart-title">Paycheck Allocation</div>
             <div class="chart-sub">Where your monthly income should go</div>
-            <canvas id="paycheckChart" height="220"></canvas>
+            <div style="position:relative;height:200px;"><canvas id="paycheckChart"></canvas></div>
             <div id="paycheck-legend" class="mt-3"></div>
           </div>
         </div>
@@ -180,12 +180,18 @@ body { display: flex; flex-direction: column; overflow-x: hidden; }
         <h2>Life Path Simulations</h2>
         <p>Your projected 5-year net worth across three distinct financial strategies.</p>
       </div>
-      <div class="chart-card mb-4">
-        <div class="chart-title">5-Year Net Worth Projection</div>
-        <div class="chart-sub">Monthly net worth (investments minus remaining debt) for each path</div>
-        <canvas id="lifepathChart" height="300"></canvas>
+      <div class="row g-3">
+        <div class="col-lg-8">
+          <div class="chart-card h-100">
+            <div class="chart-title">5-Year Net Worth Projection</div>
+            <div class="chart-sub">Net worth (investments minus remaining debt) per month</div>
+            <div style="position:relative;height:260px;"><canvas id="lifepathChart"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="row g-3 h-100" id="path-summary-cards"></div>
+        </div>
       </div>
-      <div class="row g-3" id="path-summary-cards"></div>
     </div>
 
     <!-- ── Debt Optimizer ──────────────────────────────────────────────── -->
@@ -194,12 +200,18 @@ body { display: flex; flex-direction: column; overflow-x: hidden; }
         <h2>Debt vs. Growth Optimizer</h2>
         <p>What happens to your net worth in 5 years depending on where you put your extra monthly income?</p>
       </div>
-      <div class="chart-card mb-4">
-        <div class="chart-title">5-Year Net Worth by Strategy</div>
-        <div class="chart-sub">Using 10% of your monthly income as extra allocation</div>
-        <canvas id="optimizerChart" height="260"></canvas>
+      <div class="row g-3">
+        <div class="col-lg-8">
+          <div class="chart-card h-100">
+            <div class="chart-title">5-Year Net Worth by Strategy</div>
+            <div class="chart-sub">Using 10% of your monthly income as extra allocation</div>
+            <div style="position:relative;height:260px;"><canvas id="optimizerChart"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="row g-3 h-100" id="optimizer-cards"></div>
+        </div>
       </div>
-      <div class="row g-3" id="optimizer-cards"></div>
     </div>
 
     <!-- ── First Year Roadmap ──────────────────────────────────────────── -->
@@ -284,6 +296,7 @@ async function loadOverview() {
     },
     options: {
       cutout: '72%',
+      maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}/mo` } } },
     }
   });
@@ -328,6 +341,7 @@ async function loadLifePaths() {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` } } },
       scales: {
@@ -374,6 +388,7 @@ async function loadOptimizer() {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` Net Worth: ${fmt(ctx.raw)}` } } },
       scales: { y: { ticks: { callback: v => fmtK(v) } } }
     }
