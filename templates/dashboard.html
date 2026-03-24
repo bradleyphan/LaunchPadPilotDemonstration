@@ -33,9 +33,12 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
 .nav-item-btn:hover { background: var(--bg-card-2); color: #e2e8f0; }
 .nav-item-btn.active { background: rgba(15,98,254,.12); color: var(--primary); font-weight: 600; }
 .nav-item-btn i { font-size: 1rem; width: 20px; text-align: center; }
-.main-content { flex: 1; padding: 1.5rem 2rem; min-width: 0; height: calc(100vh - 57px); overflow-y: auto; }
+.main-content { flex: 1; padding: 1.5rem 2rem; min-width: 0; height: calc(100vh - 57px); overflow-y: auto; display: flex; flex-direction: column; }
 .section-panel { display: none; }
-.section-panel.active { display: block; }
+.section-panel.active { display: flex; flex-direction: column; flex: 1; }
+.section-panel.active .row { flex: 1; }
+.section-panel.active .chart-card { display: flex; flex-direction: column; }
+.section-panel.active .chart-card > div[style*="position:relative"] { flex: 1; height: auto !important; }
 .stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
