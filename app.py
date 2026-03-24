@@ -242,6 +242,7 @@ def api_profile():
             "monthly_expenses":    monthly_rent + other_expenses,
             "employer_401k_match": float(data.get("employer_401k_match", 0)),
             "signing_bonus":       float(data.get("signing_bonus", 0)),
+            "current_savings":     float(data.get("current_savings", 0)),
             "updated_at":          datetime.utcnow().isoformat(),
         }
         profiles_col.update_one({"user_id": session["user_id"]}, {"$set": profile}, upsert=True)

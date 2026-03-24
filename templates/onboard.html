@@ -154,6 +154,15 @@ body { display: flex; flex-direction: column; min-height: 100vh; background: var
           </div>
           <p class="field-hint">Leave 0 if none.</p>
         </div>
+
+        <div class="col-12">
+          <label class="form-label"><i class="bi bi-piggy-bank-fill me-1"></i>Current Savings &amp; Investments</label>
+          <div class="input-group">
+            <span class="input-group-text" style="border-radius:10px 0 0 10px;">$</span>
+            <input type="number" class="form-control" id="current_savings" placeholder="e.g. 3000" min="0" style="border-radius:0 10px 10px 0;" />
+          </div>
+          <p class="field-hint">Everything you currently have saved — bank account, 401k, Roth IRA, investments combined. Leave 0 if starting fresh. This anchors your Life Path projections to your real starting point.</p>
+        </div>
       </div>
 
       <button type="submit" class="btn-onboard">
@@ -181,6 +190,7 @@ body { display: flex; flex-direction: column; min-height: 100vh; background: var
           document.getElementById('other_expenses').value      = p.other_expenses      || '';
           document.getElementById('employer_401k_match').value = p.employer_401k_match || '';
           document.getElementById('signing_bonus').value       = p.signing_bonus       || '';
+          document.getElementById('current_savings').value     = p.current_savings     || '';
         }
       }
     } catch {}
@@ -219,7 +229,8 @@ body { display: flex; flex-direction: column; min-height: 100vh; background: var
       other_expenses:      other_expenses,
       monthly_expenses:    monthly_rent + other_expenses,
       employer_401k_match: parseFloat(document.getElementById('employer_401k_match').value) || 0,
-      signing_bonus:       parseFloat(document.getElementById('signing_bonus').value) || 0,
+      signing_bonus:       parseFloat(document.getElementById('signing_bonus').value)       || 0,
+      current_savings:     parseFloat(document.getElementById('current_savings').value)     || 0,
     };
 
     try {

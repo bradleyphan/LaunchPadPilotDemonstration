@@ -252,7 +252,7 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
         <div class="col-lg-8">
           <div class="chart-card h-100">
             <div class="chart-title">5-Year Net Worth Projection</div>
-            <div class="chart-sub">Net worth (investments minus remaining debt) per month</div>
+            <div class="chart-sub" id="lp-chart-sub">Projected from your current loan balance and savings</div>
             <div class="chart-fill" style="position:relative;"><canvas id="lifepathChart"></canvas></div>
           </div>
         </div>
@@ -646,7 +646,7 @@ const LP_DESCS  = {
   investor:   'Pay the loan minimum only — every extra dollar goes into a Roth IRA from day one.',
 };
 
-function calcLifePaths(salary, loanBalance, loanRatePct, extraMonthly, months) {
+function calcLifePaths(salary, loanBalance, loanRatePct, extraMonthly, months, startingInv = 0) {
   const r        = (loanRatePct / 100) / 12;
   const hysaRate = 0.045 / 12;
   const rothRate = 0.07  / 12;
@@ -657,9 +657,9 @@ function calcLifePaths(salary, loanBalance, loanRatePct, extraMonthly, months) {
   }
   const extra = Math.max(0, extraMonthly);
   const st = {
-    aggressive: { loan: loanBalance, inv: 0 },
-    balanced:   { loan: loanBalance, inv: 0 },
-    investor:   { loan: loanBalance, inv: 0 },
+    aggressive: { loan: loanBalance, inv: startingInv },
+    balanced:   { loan: loanBalance, inv: startingInv },
+    investor:   { loan: loanBalance, inv: startingInv },
   };
   const out = { aggressive: [], balanced: [], investor: [] };
 
@@ -694,8 +694,15 @@ function calcLifePaths(salary, loanBalance, loanRatePct, extraMonthly, months) {
 }
 
 async function loadLifePaths() {
-  const profRes  = await fetch('/api/profile');
+  const [profRes, snapRes] = await Promise.all([fetch('/api/profile'), fetch('/api/snapshots')]);
   lpProfile      = await profRes.json();
+  const snaps    = await snapRes.json();
+
+  // Use most recent snapshot for starting position; fall back to profile values
+  const lastSnap        = snaps.length > 0 ? snaps[snaps.length - 1] : null;
+  lpProfile._startLoan  = lastSnap ? lastSnap.loan_balance    : lpProfile.loan_balance;
+  lpProfile._startInv   = lastSnap ? lastSnap.savings_balance : (lpProfile.current_savings || 0);
+
   lpBaseSurplus  = Math.max(0, Math.round((lpProfile.salary / 12) - lpProfile.monthly_expenses));
 
   const months = 60;
@@ -707,8 +714,9 @@ async function loadLifePaths() {
   slider.max      = maxSlider;
   slider.value    = lpBaseSurplus;
   document.getElementById('lp-slider-max').textContent   = `$${maxSlider.toLocaleString()}`;
+  const startNetWorth = lpProfile._startInv - lpProfile._startLoan;
   document.getElementById('lp-surplus-context').textContent =
-    `Your current monthly surplus is $${lpBaseSurplus.toLocaleString()} — drag to explore scenarios`;
+    `Starting from ${fmt(startNetWorth)} net worth · $${lpBaseSurplus.toLocaleString()}/mo surplus — drag to explore`;
   document.getElementById('lp-controls').style.display   = 'block';
   document.getElementById('lp-reset-btn').style.display  = 'block';
   document.getElementById('lp-slider-label').textContent = `$${lpBaseSurplus.toLocaleString()}/mo`;
@@ -751,7 +759,14 @@ async function loadLifePaths() {
 function renderLifePaths(extraMonthly) {
   if (!lpProfile) return;
   const extra  = parseFloat(extraMonthly);
-  const paths  = calcLifePaths(lpProfile.salary, lpProfile.loan_balance, lpProfile.loan_rate || 5.5, extra, 60);
+  const paths  = calcLifePaths(
+    lpProfile.salary,
+    lpProfile._startLoan,
+    lpProfile.loan_rate || 5.5,
+    extra,
+    60,
+    lpProfile._startInv
+  );
   const keys   = Object.keys(LP_COLORS);
 
   // Update chart
