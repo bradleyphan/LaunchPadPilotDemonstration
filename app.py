@@ -102,30 +102,42 @@ def paycheck_allocation(salary):
 def debt_optimizer(loan_balance, loan_rate_pct, extra_monthly, years=5):
     months = years * 12
     r = (loan_rate_pct / 100) / 12
-    hysa = 0.045 / 12
-    roth = 0.07 / 12
+    hysa_rate = 0.045 / 12
+    roth_rate = 0.07 / 12
 
-    loan_a, interest_saved = float(loan_balance), 0.0
+    if loan_balance > 0 and r > 0:
+        n = 120
+        min_payment = max(100, loan_balance * (r * (1 + r) ** n) / ((1 + r) ** n - 1))
+    else:
+        min_payment = 0
+
+    # Option A: pay extra toward loan; once paid off, invest freed cash in HYSA
+    loan_a, inv_a, interest_saved = float(loan_balance), 0.0, 0.0
     for _ in range(months):
-        interest = loan_a * r
-        interest_saved += interest
-        loan_a = max(0, loan_a + interest - extra_monthly)
+        if loan_a > 0:
+            interest = loan_a * r
+            interest_saved += interest
+            loan_a = max(0, loan_a + interest - (min_payment + extra_monthly))
+        else:
+            inv_a = (inv_a + min_payment + extra_monthly) * (1 + hysa_rate)
 
+    # Option B: pay minimum on loan; put extra in HYSA
     loan_b, inv_b = float(loan_balance), 0.0
     for _ in range(months):
-        loan_b = max(0, loan_b * (1 + r) - 100)
-        inv_b = (inv_b + extra_monthly) * (1 + hysa)
+        loan_b = max(0, loan_b * (1 + r) - min_payment)
+        inv_b = (inv_b + extra_monthly) * (1 + hysa_rate)
 
+    # Option C: pay minimum on loan; put extra in Roth IRA
     loan_c, inv_c = float(loan_balance), 0.0
     for _ in range(months):
-        loan_c = max(0, loan_c * (1 + r) - 100)
-        inv_c = (inv_c + extra_monthly) * (1 + roth)
+        loan_c = max(0, loan_c * (1 + r) - min_payment)
+        inv_c = (inv_c + extra_monthly) * (1 + roth_rate)
 
-    return {
-        "pay_debt": {"net_worth": round(-loan_a, 2),          "detail": round(interest_saved, 2), "label": "Pay Off Loan Faster"},
-        "hysa":     {"net_worth": round(inv_b - loan_b, 2),   "detail": round(inv_b, 2),          "label": "High-Yield Savings (4.5%)"},
-        "roth":     {"net_worth": round(inv_c - loan_c, 2),   "detail": round(inv_c, 2),          "label": "Roth IRA (7% avg)"},
-    }
+    return [
+        {"key": "pay_debt", "net_worth": round(inv_a, 2),            "detail": round(interest_saved, 2), "label": "Pay Off Loan Faster"},
+        {"key": "hysa",     "net_worth": round(inv_b - loan_b, 2),   "detail": round(inv_b, 2),          "label": "High-Yield Savings (4.5%)"},
+        {"key": "roth",     "net_worth": round(inv_c - loan_c, 2),   "detail": round(inv_c, 2),          "label": "Roth IRA (7% avg)"},
+    ]
 
 
 def generate_advice(profile):
