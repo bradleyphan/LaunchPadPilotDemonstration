@@ -119,13 +119,22 @@ body { display: flex; flex-direction: column; min-height: 100vh; background: var
           <p class="field-hint">Federal avg is ~5.5%. Check your servicer.</p>
         </div>
 
-        <div class="col-12">
-          <label class="form-label"><i class="bi bi-house-fill me-1"></i>Estimated Monthly Expenses</label>
+        <div class="col-sm-6">
+          <label class="form-label"><i class="bi bi-house-fill me-1"></i>Monthly Rent</label>
           <div class="input-group">
             <span class="input-group-text" style="border-radius:10px 0 0 10px;">$</span>
-            <input type="number" class="form-control" id="monthly_expenses" placeholder="e.g. 2200" min="0" style="border-radius:0 10px 10px 0;" />
+            <input type="number" class="form-control" id="monthly_rent" placeholder="e.g. 1400" min="0" style="border-radius:0 10px 10px 0;" />
           </div>
-          <p class="field-hint">Rent + food + transport + utilities. Before loan payments.</p>
+          <p class="field-hint">Your rent or mortgage payment. Use the Rent Checker if unsure.</p>
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label"><i class="bi bi-cart-fill me-1"></i>Other Monthly Expenses</label>
+          <div class="input-group">
+            <span class="input-group-text" style="border-radius:10px 0 0 10px;">$</span>
+            <input type="number" class="form-control" id="other_expenses" placeholder="e.g. 800" min="0" style="border-radius:0 10px 10px 0;" />
+          </div>
+          <p class="field-hint">Food, transport, utilities, subscriptions.</p>
         </div>
 
         <div class="col-sm-6">
@@ -158,6 +167,25 @@ body { display: flex; flex-direction: column; min-height: 100vh; background: var
 
 {% block scripts %}
 <script>
+  // Pre-fill form if editing an existing profile
+  (async () => {
+    try {
+      const res = await fetch('/api/profile');
+      if (res.ok) {
+        const p = await res.json();
+        if (p && p.salary) {
+          document.getElementById('salary').value              = p.salary              || '';
+          document.getElementById('loan_balance').value        = p.loan_balance        || '';
+          document.getElementById('loan_rate').value           = p.loan_rate           || '';
+          document.getElementById('monthly_rent').value        = p.monthly_rent        || '';
+          document.getElementById('other_expenses').value      = p.other_expenses      || '';
+          document.getElementById('employer_401k_match').value = p.employer_401k_match || '';
+          document.getElementById('signing_bonus').value       = p.signing_bonus       || '';
+        }
+      }
+    } catch {}
+  })();
+
   document.getElementById('onboard-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const salary = parseFloat(document.getElementById('salary').value);
@@ -171,11 +199,15 @@ body { display: flex; flex-direction: column; min-height: 100vh; background: var
     document.getElementById('btn-text').classList.add('d-none');
     document.getElementById('btn-spin').classList.remove('d-none');
 
+    const monthly_rent   = parseFloat(document.getElementById('monthly_rent').value)   || 0;
+    const other_expenses = parseFloat(document.getElementById('other_expenses').value) || 0;
     const payload = {
       salary:              salary,
       loan_balance:        parseFloat(document.getElementById('loan_balance').value) || 0,
       loan_rate:           parseFloat(document.getElementById('loan_rate').value) || 5.5,
-      monthly_expenses:    parseFloat(document.getElementById('monthly_expenses').value) || 0,
+      monthly_rent:        monthly_rent,
+      other_expenses:      other_expenses,
+      monthly_expenses:    monthly_rent + other_expenses,
       employer_401k_match: parseFloat(document.getElementById('employer_401k_match').value) || 0,
       signing_bonus:       parseFloat(document.getElementById('signing_bonus').value) || 0,
     };

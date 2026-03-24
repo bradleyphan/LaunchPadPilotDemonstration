@@ -99,7 +99,7 @@ def paycheck_allocation(salary):
     }
 
 
-def rent_affordability(salary, loan_balance, loan_rate_pct):
+def rent_affordability(salary, loan_balance, loan_rate_pct, current_rent=0):
     monthly_gross = salary / 12
     # Approximate take-home after federal + state taxes (~22% effective rate for $50-80k)
     monthly_takehome = monthly_gross * 0.78
@@ -142,6 +142,7 @@ def rent_affordability(salary, loan_balance, loan_rate_pct):
         "monthly_gross":     round(monthly_gross, 0),
         "monthly_takehome":  round(monthly_takehome, 0),
         "loan_min_payment":  round(min_payment, 0),
+        "current_rent":      round(current_rent, 0),
         "tiers":             tiers,
     }
 
@@ -309,12 +310,16 @@ def dashboard():
 def api_profile():
     if request.method == "POST":
         data = request.get_json()
+        monthly_rent   = float(data.get("monthly_rent",   0))
+        other_expenses = float(data.get("other_expenses", 0))
         profile = {
             "user_id":             session["user_id"],
             "salary":              float(data.get("salary", 0)),
             "loan_balance":        float(data.get("loan_balance", 0)),
             "loan_rate":           float(data.get("loan_rate", 5.5)),
-            "monthly_expenses":    float(data.get("monthly_expenses", 0)),
+            "monthly_rent":        monthly_rent,
+            "other_expenses":      other_expenses,
+            "monthly_expenses":    monthly_rent + other_expenses,
             "employer_401k_match": float(data.get("employer_401k_match", 0)),
             "signing_bonus":       float(data.get("signing_bonus", 0)),
             "updated_at":          datetime.utcnow().isoformat(),
@@ -350,7 +355,7 @@ def api_rent():
     p = profiles_col.find_one({"user_id": session["user_id"]})
     if not p:
         return jsonify({"error": "No profile"}), 404
-    return jsonify(rent_affordability(p["salary"], p["loan_balance"], p.get("loan_rate", 5.5))), 200
+    return jsonify(rent_affordability(p["salary"], p["loan_balance"], p.get("loan_rate", 5.5), p.get("monthly_rent", 0))), 200
 
 
 @app.route("/api/advice")

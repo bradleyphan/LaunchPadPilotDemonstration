@@ -441,7 +441,14 @@ async function loadRent() {
     </div>`;
   }).join('');
 
-  document.getElementById('rent-input').addEventListener('input', checkCustomRent);
+  const input = document.getElementById('rent-input');
+  input.addEventListener('input', checkCustomRent);
+
+  // Pre-fill with the rent they entered during onboarding
+  if (data.current_rent > 0) {
+    input.value = data.current_rent;
+    checkCustomRent();
+  }
 }
 
 function checkCustomRent() {
