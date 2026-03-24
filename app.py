@@ -15,9 +15,10 @@ app.secret_key = os.getenv("SECRET_KEY", "launchpad-dev-secret-change-in-prod")
 
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client[os.getenv("DB_NAME", "launchpad")]
-users_col = db["users"]
-profiles_col = db["profiles"]
-roadmap_col = db["roadmap"]
+users_col     = db["users"]
+profiles_col  = db["profiles"]
+roadmap_col   = db["roadmap"]
+snapshots_col = db["snapshots"]
 
 users_col.create_index("email", unique=True)
 
@@ -379,6 +380,34 @@ def api_roadmap():
 
     doc = roadmap_col.find_one({"user_id": session["user_id"]})
     return jsonify({"completed": doc.get("completed", []) if doc else []}), 200
+
+
+@app.route("/api/snapshots", methods=["GET", "POST"])
+@require_auth
+def api_snapshots():
+    if request.method == "POST":
+        data     = request.get_json()
+        date     = data.get("date", datetime.utcnow().strftime("%Y-%m-%d"))
+        loan     = float(data.get("loan_balance", 0))
+        savings  = float(data.get("savings_balance", 0))
+        snapshots_col.update_one(
+            {"user_id": session["user_id"], "date": date},
+            {"$set": {
+                "user_id":         session["user_id"],
+                "date":            date,
+                "loan_balance":    round(loan, 2),
+                "savings_balance": round(savings, 2),
+                "net_worth":       round(savings - loan, 2),
+            }},
+            upsert=True
+        )
+        return jsonify({"ok": True}), 200
+
+    docs = list(snapshots_col.find(
+        {"user_id": session["user_id"]},
+        {"_id": 0, "user_id": 0}
+    ).sort("date", 1))
+    return jsonify(docs), 200
 
 
 @app.route("/health")
