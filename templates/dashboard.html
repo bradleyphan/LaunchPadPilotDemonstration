@@ -36,8 +36,8 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
 .main-content { flex: 1; padding: 1.5rem 2rem; min-width: 0; height: calc(100vh - 57px); overflow-y: auto; display: flex; flex-direction: column; }
 .section-panel { display: none; }
 .section-panel.active { display: flex; flex-direction: column; flex: 1; }
-.section-panel.active > .row { flex: 1; min-height: 0; }
-.chart-fill { height: calc(100vh - 270px); }
+.section-panel.active > .row-fill { flex: 1; min-height: 0; }
+.chart-fill { height: calc(100vh - 300px); }
 .stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -151,13 +151,13 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
         <h2>Overview</h2>
         <p>Your key financial metrics and paycheck allocation at a glance.</p>
       </div>
-      <div class="row g-3 mb-4" id="stat-cards">
+      <div class="row g-3 mb-2" id="stat-cards">
         <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Monthly Income</div><div class="stat-value" id="stat-monthly">—</div></div></div>
         <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Loan Balance</div><div class="stat-value" id="stat-loan">—</div></div></div>
         <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">DTI Ratio</div><div class="stat-value" id="stat-dti">—</div><div class="stat-sub" id="stat-dti-label"></div></div></div>
         <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Monthly Surplus</div><div class="stat-value" id="stat-surplus">—</div></div></div>
       </div>
-      <div class="row g-3">
+      <div class="row row-fill g-3">
         <div class="col-lg-5">
           <div class="chart-card h-100">
             <div class="chart-title">Paycheck Allocation</div>
@@ -182,7 +182,7 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
         <h2>Life Path Simulations</h2>
         <p>Your projected 5-year net worth across three distinct financial strategies.</p>
       </div>
-      <div class="row g-3">
+      <div class="row row-fill g-3">
         <div class="col-lg-8">
           <div class="chart-card h-100">
             <div class="chart-title">5-Year Net Worth Projection</div>
@@ -202,7 +202,7 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
         <h2>Debt vs. Growth Optimizer</h2>
         <p>What happens to your net worth in 5 years depending on where you put your extra monthly income?</p>
       </div>
-      <div class="row g-3">
+      <div class="row row-fill g-3">
         <div class="col-lg-8">
           <div class="chart-card h-100">
             <div class="chart-title">5-Year Net Worth by Strategy</div>
