@@ -100,6 +100,38 @@ def paycheck_allocation(salary):
     }
 
 
+def match_401k_analysis(salary, match_pct):
+    monthly_gross  = salary / 12
+    user_monthly   = monthly_gross * match_pct / 100
+    employer_monthly = user_monthly  # dollar-for-dollar up to match_pct
+    total_monthly  = user_monthly + employer_monthly
+    growth_rate    = 0.07 / 12
+
+    projections = {}
+    for years in [5, 10, 20, 30]:
+        months = years * 12
+        with_match, without_match = 0.0, 0.0
+        for _ in range(months):
+            with_match    = (with_match    + total_monthly)  * (1 + growth_rate)
+            without_match = (without_match + user_monthly)   * (1 + growth_rate)
+        projections[str(years)] = {
+            "with_match":       round(with_match, 0),
+            "without_match":    round(without_match, 0),
+            "free_money_value": round(with_match - without_match, 0),
+        }
+
+    return {
+        "match_pct":         match_pct,
+        "user_monthly":      round(user_monthly, 2),
+        "employer_monthly":  round(employer_monthly, 2),
+        "total_monthly":     round(total_monthly, 2),
+        "annual_free":       round(employer_monthly * 12, 2),
+        "projections":       projections,
+        "irs_limit":         23500,
+        "maxing_out":        (user_monthly * 12) >= 23500,
+    }
+
+
 def rent_affordability(salary, loan_balance, loan_rate_pct, current_rent=0):
     monthly_gross = salary / 12
     # Approximate take-home after federal + state taxes (~22% effective rate for $50-80k)
@@ -380,6 +412,15 @@ def api_roadmap():
 
     doc = roadmap_col.find_one({"user_id": session["user_id"]})
     return jsonify({"completed": doc.get("completed", []) if doc else []}), 200
+
+
+@app.route("/api/401k")
+@require_auth
+def api_401k():
+    p = profiles_col.find_one({"user_id": session["user_id"]})
+    if not p:
+        return jsonify({"error": "No profile"}), 404
+    return jsonify(match_401k_analysis(p["salary"], p.get("employer_401k_match", 0))), 200
 
 
 @app.route("/api/snapshots", methods=["GET", "POST"])

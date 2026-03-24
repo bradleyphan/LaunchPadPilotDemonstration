@@ -129,6 +129,7 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
   <button class="mobile-nav-btn active" onclick="showSection('overview', this)"><i class="bi bi-speedometer2 me-1"></i>Overview</button>
   <button class="mobile-nav-btn" onclick="showSection('lifepaths', this)"><i class="bi bi-diagram-3 me-1"></i>Life Paths</button>
   <button class="mobile-nav-btn" onclick="showSection('optimizer', this)"><i class="bi bi-house me-1"></i>Rent Checker</button>
+  <button class="mobile-nav-btn" onclick="showSection('match401k', this)"><i class="bi bi-building me-1"></i>401k</button>
   <button class="mobile-nav-btn" onclick="showSection('progress', this)"><i class="bi bi-graph-up-arrow me-1"></i>Progress</button>
   <button class="mobile-nav-btn" onclick="showSection('roadmap', this)"><i class="bi bi-calendar3 me-1"></i>Roadmap</button>
   <button class="mobile-nav-btn" onclick="showSection('advisor', this)"><i class="bi bi-cpu me-1"></i>AI Advisor</button>
@@ -147,6 +148,9 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
     </button>
     <button class="nav-item-btn" onclick="showSection('optimizer', this)" id="nav-optimizer">
       <i class="bi bi-house-fill"></i> Rent Checker
+    </button>
+    <button class="nav-item-btn" onclick="showSection('match401k', this)" id="nav-match401k">
+      <i class="bi bi-building-fill"></i> 401k Analyzer
     </button>
     <div class="sidebar-label">Tools</div>
     <button class="nav-item-btn" onclick="showSection('progress', this)" id="nav-progress">
@@ -243,6 +247,31 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ── 401k Analyzer ──────────────────────────────────────────────── -->
+    <div class="section-panel" id="panel-match401k">
+      <div class="section-header">
+        <h2>401k Match Analyzer</h2>
+        <p>See exactly how much free money your employer is offering — and what it compounds into.</p>
+      </div>
+      <div class="row row-fill g-3">
+
+        <!-- Left: stat cards -->
+        <div class="col-lg-4 d-flex flex-column gap-3" id="match-cards">
+          <div class="text-center py-4" style="color:var(--muted);"><span class="spinner-border spinner-border-sm me-2"></span>Loading…</div>
+        </div>
+
+        <!-- Right: grouped bar chart -->
+        <div class="col-lg-8">
+          <div class="chart-card h-100">
+            <div class="chart-title">Growth Comparison: With vs. Without Employer Match</div>
+            <div class="chart-sub">At 7% avg annual return — the power of compounding free money</div>
+            <div class="chart-fill" style="position:relative;"><canvas id="match401kChart"></canvas></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -679,6 +708,101 @@ async function loadAdvice() {
   }).join('');
 }
 
+// ── 401k Analyzer ─────────────────────────────────────────────────────────────
+async function load401k() {
+  const res  = await fetch('/api/401k');
+  const data = await res.json();
+
+  // Handle no match configured
+  if (data.match_pct === 0) {
+    document.getElementById('match-cards').innerHTML = `
+      <div class="chart-card d-flex flex-column align-items-center justify-content-center text-center gap-3" style="flex:1;padding:2rem;">
+        <i class="bi bi-building-fill" style="font-size:2.5rem;color:var(--ind);opacity:.4;"></i>
+        <div style="font-weight:700;font-size:.95rem;color:var(--text);">No employer match on file</div>
+        <div style="font-size:.8rem;color:var(--muted);line-height:1.6;">Go to <a href="/onboard" style="color:var(--ind);font-weight:600;">Edit Profile</a> and enter your employer's 401k match percentage to unlock this analysis.</div>
+      </div>`;
+    return;
+  }
+
+  const p = data.projections;
+
+  // Stat cards
+  document.getElementById('match-cards').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Your Monthly Contribution</div>
+      <div class="stat-value">${fmt(data.user_monthly)}</div>
+      <div class="stat-sub">${data.match_pct}% of your gross salary</div>
+    </div>
+    <div class="stat-card" style="border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.04);">
+      <div class="stat-label">Employer Match <span style="color:#059669;font-weight:700;">(Free!)</span></div>
+      <div class="stat-value" style="color:#059669;">${fmt(data.employer_monthly)}</div>
+      <div class="stat-sub">${fmt(data.annual_free)}/yr added to your account</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Monthly Going In</div>
+      <div class="stat-value">${fmt(data.total_monthly)}</div>
+      <div class="stat-sub">Your contribution + free match</div>
+    </div>
+    <div class="stat-card" style="border-color:rgba(79,70,229,.3);background:rgba(79,70,229,.04);">
+      <div class="stat-label">Free Money Over 30 Years</div>
+      <div class="stat-value" style="color:var(--ind);">${fmt(p['30'].free_money_value)}</div>
+      <div class="stat-sub">What skipping the match costs you long-term</div>
+    </div>
+    ${!data.maxing_out ? `
+    <div style="background:rgba(217,119,6,.07);border:1.5px solid rgba(217,119,6,.25);border-radius:12px;padding:1rem;">
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#D97706;margin-bottom:.3rem;">
+        <i class="bi bi-lightbulb-fill me-1"></i>IRS 2025 Limit
+      </div>
+      <div style="font-size:.8rem;color:var(--text);line-height:1.5;">
+        You can contribute up to <strong>$23,500/yr</strong> to your 401k. You're currently on track for <strong>${fmt(data.user_monthly * 12)}/yr</strong> — room to grow.
+      </div>
+    </div>` : `
+    <div style="background:rgba(5,150,105,.07);border:1.5px solid rgba(5,150,105,.25);border-radius:12px;padding:1rem;">
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#059669;margin-bottom:.3rem;">
+        <i class="bi bi-trophy-fill me-1"></i>Maxing Out!
+      </div>
+      <div style="font-size:.8rem;color:var(--text);line-height:1.5;">You're hitting the $23,500 IRS limit. Outstanding — consider a Roth IRA next.</div>
+    </div>`}`;
+
+  // Grouped bar chart
+  new Chart(document.getElementById('match401kChart'), {
+    type: 'bar',
+    data: {
+      labels: ['5 Years', '10 Years', '20 Years', '30 Years'],
+      datasets: [
+        {
+          label: 'With Employer Match',
+          data: [p['5'].with_match, p['10'].with_match, p['20'].with_match, p['30'].with_match],
+          backgroundColor: 'rgba(79,70,229,.8)',
+          borderColor: '#4F46E5',
+          borderWidth: 2,
+          borderRadius: 6,
+        },
+        {
+          label: 'Without Match (your contributions only)',
+          data: [p['5'].without_match, p['10'].without_match, p['20'].without_match, p['30'].without_match],
+          backgroundColor: 'rgba(100,116,139,.25)',
+          borderColor: '#94A3B8',
+          borderWidth: 2,
+          borderRadius: 6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` } },
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { ticks: { callback: v => fmtK(v) } },
+      },
+    },
+  });
+}
+
 // ── Track Progress ────────────────────────────────────────────────────────────
 let progressChart = null;
 
@@ -822,6 +946,7 @@ function formatDate(iso) {
   await loadOverview();
   loadLifePaths();
   loadRent();
+  load401k();
   loadProgress();
   loadRoadmap();
   loadAdvice();
