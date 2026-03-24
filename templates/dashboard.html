@@ -224,10 +224,34 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
 
     <!-- ── Life Paths ──────────────────────────────────────────────────── -->
     <div class="section-panel" id="panel-lifepaths">
-      <div class="section-header">
-        <h2>Life Path Simulations</h2>
-        <p>Your projected 5-year net worth across three distinct financial strategies.</p>
+      <div class="section-header d-flex justify-content-between align-items-start">
+        <div>
+          <h2>Life Path Simulations</h2>
+          <p>Drag the slider to explore what each strategy does with your monthly discretionary income.</p>
+        </div>
+        <button id="lp-reset-btn" onclick="resetLifePaths()" style="display:none;font-size:.75rem;font-weight:600;color:var(--ind);background:var(--ind-light);border:1.5px solid rgba(79,70,229,.2);border-radius:8px;padding:.3rem .75rem;cursor:pointer;white-space:nowrap;">
+          ↺ Reset to my numbers
+        </button>
       </div>
+
+      <!-- Slider control -->
+      <div id="lp-controls" style="display:none;background:var(--bg);border-radius:12px;padding:.85rem 1rem;margin-bottom:.75rem;">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <div>
+            <label style="font-size:.78rem;font-weight:700;color:var(--text);">Monthly Discretionary Amount</label>
+            <div id="lp-surplus-context" style="font-size:.7rem;color:var(--muted);margin-top:.1rem;"></div>
+          </div>
+          <span id="lp-slider-label" style="font-size:1.2rem;font-weight:800;color:var(--ind);"></span>
+        </div>
+        <input type="range" id="lp-slider" min="0" max="2000" step="25" value="500"
+          style="width:100%;accent-color:#4F46E5;cursor:pointer;" oninput="updateLifePathSlider(this.value)" />
+        <div class="d-flex justify-content-between mt-1">
+          <span style="font-size:.68rem;color:var(--muted);">$0</span>
+          <span style="font-size:.68rem;color:var(--muted);text-align:center;">Each strategy allocates this amount differently</span>
+          <span id="lp-slider-max" style="font-size:.68rem;color:var(--muted);"></span>
+        </div>
+      </div>
+
       <div class="row row-fill g-3">
         <div class="col-lg-8">
           <div class="chart-card h-100">
@@ -237,7 +261,7 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
           </div>
         </div>
         <div class="col-lg-4">
-          <div class="row g-3 h-100" id="path-summary-cards"></div>
+          <div class="d-flex flex-column gap-3 h-100" id="path-summary-cards"></div>
         </div>
       </div>
     </div>
@@ -567,57 +591,157 @@ async function loadOverview() {
 }
 
 // ── Life Paths ────────────────────────────────────────────────────────────────
-async function loadLifePaths() {
-  const res = await fetch('/api/life-paths');
-  const paths = await res.json();
-  const labels = Array.from({length: 60}, (_, i) => i % 12 === 0 ? `Yr ${i/12+1}` : '');
+let lifepathChart  = null;
+let lpProfile      = null;
+let lpBaseSurplus  = 0;
 
-  new Chart(document.getElementById('lifepathChart'), {
+const LP_COLORS = { aggressive: '#4F46E5', balanced: '#7C3AED', investor: '#059669' };
+const LP_LABELS = { aggressive: 'Aggressive Payoff', balanced: 'Balanced', investor: 'Investor Path' };
+const LP_DESCS  = {
+  aggressive: 'All extra cash attacks the loan. Once paid off, everything flows into HYSA.',
+  balanced:   'Splits extra cash: half accelerates the loan, half goes straight into a Roth IRA.',
+  investor:   'Pay the loan minimum only — every extra dollar goes into a Roth IRA from day one.',
+};
+
+function calcLifePaths(salary, loanBalance, loanRatePct, extraMonthly, months) {
+  const r        = (loanRatePct / 100) / 12;
+  const hysaRate = 0.045 / 12;
+  const rothRate = 0.07  / 12;
+  let minPmt = 0;
+  if (loanBalance > 0 && r > 0) {
+    const n = 120;
+    minPmt = Math.max(100, loanBalance * (r * Math.pow(1+r,n)) / (Math.pow(1+r,n) - 1));
+  }
+  const extra = Math.max(0, extraMonthly);
+  const st = {
+    aggressive: { loan: loanBalance, inv: 0 },
+    balanced:   { loan: loanBalance, inv: 0 },
+    investor:   { loan: loanBalance, inv: 0 },
+  };
+  const out = { aggressive: [], balanced: [], investor: [] };
+
+  for (let i = 0; i < months; i++) {
+    // Aggressive: all extra → loan; after payoff → HYSA
+    let s = st.aggressive;
+    if (s.loan > 0) {
+      s.loan = Math.max(0, s.loan * (1+r) - extra);
+      s.inv *= (1 + hysaRate);
+    } else { s.inv = (s.inv + extra) * (1 + hysaRate); }
+    out.aggressive.push(Math.round(s.inv - s.loan));
+
+    // Balanced: split extra (half extra loan pmt, half Roth)
+    s = st.balanced;
+    if (s.loan > 0) {
+      const half = Math.max(0, extra - minPmt) / 2;
+      s.loan = Math.max(0, s.loan * (1+r) - (minPmt + half));
+      s.inv  = (s.inv + half) * (1 + rothRate);
+    } else { s.inv = (s.inv + extra) * (1 + rothRate); }
+    out.balanced.push(Math.round(s.inv - s.loan));
+
+    // Investor: min payment only, all extra → Roth
+    s = st.investor;
+    if (s.loan > 0) {
+      const pmt = Math.min(minPmt, s.loan * (1+r));
+      s.loan = Math.max(0, s.loan * (1+r) - pmt);
+      s.inv  = (s.inv + Math.max(0, extra - pmt)) * (1 + rothRate);
+    } else { s.inv = (s.inv + extra) * (1 + rothRate); }
+    out.investor.push(Math.round(s.inv - s.loan));
+  }
+  return out;
+}
+
+async function loadLifePaths() {
+  const profRes  = await fetch('/api/profile');
+  lpProfile      = await profRes.json();
+  lpBaseSurplus  = Math.max(0, Math.round((lpProfile.salary / 12) - lpProfile.monthly_expenses));
+
+  const months = 60;
+  const labels = Array.from({length: months}, (_, i) => i % 12 === 0 ? `Yr ${Math.round(i/12)+1}` : '');
+
+  // Set up slider
+  const maxSlider = Math.max(lpBaseSurplus + 500, 1500);
+  const slider    = document.getElementById('lp-slider');
+  slider.max      = maxSlider;
+  slider.value    = lpBaseSurplus;
+  document.getElementById('lp-slider-max').textContent   = `$${maxSlider.toLocaleString()}`;
+  document.getElementById('lp-surplus-context').textContent =
+    `Your current monthly surplus is $${lpBaseSurplus.toLocaleString()} — drag to explore scenarios`;
+  document.getElementById('lp-controls').style.display   = 'block';
+  document.getElementById('lp-reset-btn').style.display  = 'block';
+  document.getElementById('lp-slider-label').textContent = `$${lpBaseSurplus.toLocaleString()}/mo`;
+
+  // Init chart
+  lifepathChart = new Chart(document.getElementById('lifepathChart'), {
     type: 'line',
     data: {
       labels,
-      datasets: Object.values(paths).map(p => ({
-        label: p.label,
-        data: p.data,
-        borderColor: p.color,
-        backgroundColor: p.color + '15',
-        borderWidth: 2.5,
-        pointRadius: 0,
-        tension: 0.3,
-        fill: false,
-      }))
+      datasets: Object.keys(LP_COLORS).map(key => ({
+        label:           LP_LABELS[key],
+        data:            [],
+        borderColor:     LP_COLORS[key],
+        backgroundColor: LP_COLORS[key] + '12',
+        borderWidth:     2.5,
+        pointRadius:     0,
+        tension:         0.3,
+        fill:            false,
+      })),
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 200 },
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` } } },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` } },
+      },
       scales: {
         x: { grid: { display: false } },
-        y: { ticks: { callback: v => fmtK(v) } }
-      }
-    }
+        y: { ticks: { callback: v => fmtK(v) } },
+      },
+    },
   });
 
-  const colors = { aggressive: '#4F46E5', balanced: '#7C3AED', investor: '#059669' };
-  const descs  = {
-    aggressive: 'Put all surplus toward debt until paid off, then invest everything in HYSA.',
-    balanced:   'Split surplus: extra debt payment + Roth IRA contributions simultaneously.',
-    investor:   'Pay loan minimum only; invest all remaining surplus in Roth IRA from day one.'
-  };
+  renderLifePaths(lpBaseSurplus);
+}
 
-  document.getElementById('path-summary-cards').innerHTML = Object.entries(paths).map(([key, p]) => `
-    <div class="col-12">
-      <div class="chart-card">
-        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
-          <div style="width:12px;height:12px;border-radius:3px;background:${colors[key]};flex-shrink:0"></div>
-          <span style="font-weight:700;font-size:.88rem">${p.label}</span>
-        </div>
-        <p style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;line-height:1.5">${descs[key]}</p>
-        <div style="font-size:1.3rem;font-weight:800;color:${colors[key]}">${fmt(p.data[59])}</div>
-        <div style="font-size:.72rem;color:var(--muted)">Net worth at Year 5</div>
+function renderLifePaths(extraMonthly) {
+  if (!lpProfile) return;
+  const extra  = parseFloat(extraMonthly);
+  const paths  = calcLifePaths(lpProfile.salary, lpProfile.loan_balance, lpProfile.loan_rate || 5.5, extra, 60);
+  const keys   = Object.keys(LP_COLORS);
+
+  // Update chart
+  keys.forEach((key, i) => { lifepathChart.data.datasets[i].data = paths[key]; });
+  lifepathChart.update();
+
+  // Update summary cards
+  document.getElementById('path-summary-cards').innerHTML = keys.map(key => {
+    const yr5 = paths[key][59];
+    const isBase = Math.abs(extra - lpBaseSurplus) < 1;
+    return `<div class="chart-card" style="flex:1;">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
+        <div style="width:12px;height:12px;border-radius:3px;background:${LP_COLORS[key]};flex-shrink:0;"></div>
+        <span style="font-weight:700;font-size:.88rem;">${LP_LABELS[key]}</span>
       </div>
-    </div>`).join('');
+      <p style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;line-height:1.5;">${LP_DESCS[key]}</p>
+      <div style="font-size:1.3rem;font-weight:800;color:${LP_COLORS[key]};">${fmt(yr5)}</div>
+      <div style="font-size:.72rem;color:var(--muted);">Net worth at Year 5${isBase ? ' (your numbers)' : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateLifePathSlider(val) {
+  const v = parseFloat(val);
+  document.getElementById('lp-slider-label').textContent = `$${Math.round(v).toLocaleString()}/mo`;
+  renderLifePaths(v);
+}
+
+function resetLifePaths() {
+  const slider  = document.getElementById('lp-slider');
+  slider.value  = lpBaseSurplus;
+  document.getElementById('lp-slider-label').textContent = `$${lpBaseSurplus.toLocaleString()}/mo`;
+  renderLifePaths(lpBaseSurplus);
 }
 
 // ── Rent Checker ──────────────────────────────────────────────────────────────
