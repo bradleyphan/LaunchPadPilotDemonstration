@@ -207,8 +207,8 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
         <div class="col-lg-8">
           <div class="chart-card h-100">
             <div class="chart-title">5-Year Net Worth by Strategy</div>
-            <div class="chart-sub">Using 10% of your monthly income as extra allocation</div>
-            <div style="position:relative;height:260px;"><canvas id="optimizerChart"></canvas></div>
+            <div class="chart-sub">Based on your full monthly surplus allocated to each strategy</div>
+            <div style="position:relative;height:300px;"><canvas id="optimizerChart"></canvas></div>
           </div>
         </div>
         <div class="col-lg-4">
@@ -397,7 +397,7 @@ async function loadOptimizer() {
   });
 
   const cardConfig = {
-    pay_debt: { headline: d => fmt(d.net_worth), headLabel: '5-yr Net Worth', sub: d => `Invests freed cash after payoff · ${fmt(d.detail)} interest avoided` },
+    pay_debt: { headline: d => fmt(d.net_worth), headLabel: '5-yr Net Worth', sub: d => `After payoff, invests freed cash · ${fmt(d.detail)} interest avoided` },
     hysa:     { headline: d => fmt(d.net_worth), headLabel: '5-yr Net Worth', sub: d => `HYSA balance: ${fmt(d.detail)}` },
     roth:     { headline: d => fmt(d.net_worth), headLabel: '5-yr Net Worth', sub: d => `Roth IRA balance: ${fmt(d.detail)}` },
   };

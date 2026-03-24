@@ -344,8 +344,8 @@ def api_debt_optimizer():
     p = profiles_col.find_one({"user_id": session["user_id"]})
     if not p:
         return jsonify({"error": "No profile"}), 404
-    extra = (p["salary"] / 12) * 0.10
-    return jsonify(debt_optimizer(p["loan_balance"], p.get("loan_rate", 5.5), extra)), 200
+    monthly_surplus = max(200, (p["salary"] / 12) - p.get("monthly_expenses", 0))
+    return jsonify(debt_optimizer(p["loan_balance"], p.get("loan_rate", 5.5), monthly_surplus)), 200
 
 
 @app.route("/api/advice")
