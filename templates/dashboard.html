@@ -132,7 +132,6 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
   <button class="mobile-nav-btn" onclick="showSection('match401k', this)"><i class="bi bi-building me-1"></i>401k</button>
   <button class="mobile-nav-btn" onclick="showSection('progress', this)"><i class="bi bi-graph-up-arrow me-1"></i>Progress</button>
   <button class="mobile-nav-btn" onclick="showSection('roadmap', this)"><i class="bi bi-calendar3 me-1"></i>Roadmap</button>
-  <button class="mobile-nav-btn" onclick="showSection('advisor', this)"><i class="bi bi-cpu me-1"></i>AI Advisor</button>
 </div>
 
 <!-- Body -->
@@ -159,9 +158,6 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
     <button class="nav-item-btn" onclick="showSection('roadmap', this)" id="nav-roadmap">
       <i class="bi bi-calendar3"></i> First-Year Roadmap
     </button>
-    <button class="nav-item-btn" onclick="showSection('advisor', this)" id="nav-advisor">
-      <i class="bi bi-cpu-fill"></i> AI Advisor
-    </button>
   </aside>
 
   <!-- Main Content -->
@@ -183,16 +179,16 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
       </div>
 
       <div class="row g-3 mb-2" id="stat-cards">
-        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Monthly Income</div><div class="stat-value" id="stat-monthly">—</div></div></div>
-        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Loan Balance</div><div class="stat-value" id="stat-loan">—</div></div></div>
-        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">DTI Ratio</div><div class="stat-value" id="stat-dti">—</div><div class="stat-sub" id="stat-dti-label"></div></div></div>
-        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Monthly Surplus</div><div class="stat-value" id="stat-surplus">—</div></div></div>
+        <div class="col-6 col-lg"><div class="stat-card"><div class="stat-label">Gross Monthly</div><div class="stat-value" id="stat-monthly">—</div><div class="stat-sub" id="stat-takehome"></div></div></div>
+        <div class="col-6 col-lg"><div class="stat-card"><div class="stat-label">Loan Balance</div><div class="stat-value" id="stat-loan">—</div><div class="stat-sub" id="stat-payoff"></div></div></div>
+        <div class="col-6 col-lg"><div class="stat-card"><div class="stat-label">DTI Ratio</div><div class="stat-value" id="stat-dti">—</div><div class="stat-sub" id="stat-dti-label"></div></div></div>
+        <div class="col-6 col-lg"><div class="stat-card"><div class="stat-label">Monthly Surplus</div><div class="stat-value" id="stat-surplus">—</div></div></div>
       </div>
       <div class="row row-fill g-3">
         <div class="col-lg-5">
           <div class="chart-card h-100">
             <div class="chart-title">Paycheck Allocation</div>
-            <div class="chart-sub">Where your monthly income should go</div>
+            <div class="chart-sub">Based on your actual loan payment &amp; expenses</div>
             <div class="chart-fill" style="position:relative;"><canvas id="paycheckChart"></canvas></div>
             <div id="paycheck-legend" class="mt-2"></div>
           </div>
@@ -383,6 +379,29 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
             <div id="snap-msg" style="display:none;margin-top:.75rem;font-size:.78rem;text-align:center;"></div>
           </div>
 
+          <!-- Savings goal -->
+          <div class="chart-card">
+            <div class="chart-title">Savings Goal</div>
+            <div class="chart-sub">Set a target to stay motivated</div>
+            <div id="goal-status"></div>
+            <div class="mb-2">
+              <label style="font-size:.76rem;font-weight:600;color:var(--text);margin-bottom:.3rem;display:block;">Target Amount</label>
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--bg);border:1.5px solid var(--border);color:var(--muted);font-weight:600;border-radius:10px 0 0 10px;font-size:.85rem;">$</span>
+                <input type="number" id="goal-amount" class="form-control" placeholder="e.g. 10000" min="0"
+                  style="border:1.5px solid var(--border);border-left:none;border-radius:0 10px 10px 0;font-size:.85rem;color:var(--text);background:var(--surface);" />
+              </div>
+            </div>
+            <div class="mb-2">
+              <label style="font-size:.76rem;font-weight:600;color:var(--text);margin-bottom:.3rem;display:block;">Target Date</label>
+              <input type="date" id="goal-date" class="form-control"
+                style="border:1.5px solid var(--border);border-radius:10px;font-size:.85rem;color:var(--text);background:var(--surface);" />
+            </div>
+            <button onclick="saveGoal()" style="width:100%;padding:.5rem;border-radius:10px;border:1.5px solid var(--ind);background:var(--ind-light);color:var(--ind);font-size:.82rem;font-weight:700;cursor:pointer;transition:background .15s;">
+              <i class="bi bi-bullseye me-1"></i>Set Goal
+            </button>
+          </div>
+
           <!-- Recent entries -->
           <div class="chart-card flex-fill">
             <div class="chart-title">Recent Entries</div>
@@ -432,16 +451,6 @@ body { display: flex; flex-direction: column; overflow: hidden; height: 100vh; b
       <div id="roadmap-container"></div>
     </div>
 
-    <!-- ── AI Advisor ──────────────────────────────────────────────────── -->
-    <div class="section-panel" id="panel-advisor">
-      <div class="section-header">
-        <h2>AI Financial Advisor</h2>
-        <p>Personalized, actionable advice based on your specific salary, debt, and financial profile.</p>
-      </div>
-      <div id="advice-container" class="d-flex flex-column gap-3">
-        <div class="text-center py-4" style="color:var(--muted);"><span class="spinner-border spinner-border-sm me-2"></span>Generating your advice…</div>
-      </div>
-    </div>
 
   </main>
 </div>
@@ -486,15 +495,41 @@ async function loadOverview() {
       `<i class="bi bi-lightning-charge-fill me-1"></i>${snaps.length} check-in${snaps.length > 1 ? 's' : ''} logged`;
   }
 
-  // Key stats
-  const dti      = prof.loan_balance / prof.salary;
+  // Key stats — DTI = monthly debt payment / monthly gross income
+  const loanR   = ((prof.loan_rate || 5.5) / 100) / 12;
+  const loanN   = 120;
+  const minPmt  = (prof.loan_balance > 0 && loanR > 0)
+    ? Math.max(100, prof.loan_balance * (loanR * Math.pow(1+loanR, loanN)) / (Math.pow(1+loanR, loanN) - 1))
+    : 0;
+  const dti      = pay.monthly > 0 ? minPmt / pay.monthly : 0;
   const surplus  = pay.monthly - prof.monthly_expenses;
-  const dtiLabel = dti < 0.15 ? 'Excellent' : dti < 0.35 ? 'Manageable' : 'High — act fast';
-  const dtiColor = dti < 0.15 ? '#059669' : dti < 0.35 ? '#D97706' : '#DC2626';
+  const dtiLabel = dti < 0.10 ? 'Excellent' : dti < 0.20 ? 'Manageable' : 'High — act fast';
+  const dtiColor = dti < 0.10 ? '#059669' : dti < 0.20 ? '#D97706' : '#DC2626';
+
+  // Estimated take-home (~78% for $50-80k range)
+  const takeHome = Math.round(pay.monthly * 0.78);
+
+  // Loan payoff date — simulate month-by-month until balance hits 0
+  let payoffLabel = 'No loan';
+  if (prof.loan_balance > 0 && minPmt > 0) {
+    let bal = prof.loan_balance;
+    let months = 0;
+    while (bal > 0 && months < 600) {
+      bal = bal * (1 + loanR) - minPmt;
+      months++;
+    }
+    if (months < 600) {
+      const payoffDate = new Date();
+      payoffDate.setMonth(payoffDate.getMonth() + months);
+      payoffLabel = 'Paid off ' + payoffDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+  }
 
   document.getElementById('stat-monthly').textContent   = fmtK(pay.monthly);
+  document.getElementById('stat-takehome').textContent  = `~${fmtK(takeHome)}/mo take-home`;
   document.getElementById('stat-loan').textContent      = fmtK(prof.loan_balance);
-  document.getElementById('stat-dti').innerHTML         = `<span style="color:${dtiColor}">${(dti*100).toFixed(0)}%</span>`;
+  document.getElementById('stat-payoff').textContent    = payoffLabel;
+  document.getElementById('stat-dti').innerHTML         = `<span style="color:${dtiColor}">${(dti*100).toFixed(1)}%</span>`;
   document.getElementById('stat-dti-label').textContent = dtiLabel;
   document.getElementById('stat-surplus').textContent   = fmtK(Math.max(0, surplus));
 
@@ -527,11 +562,17 @@ async function loadOverview() {
       </div>`).join('');
   }
 
-  // Paycheck donut
+  // Paycheck donut — dynamic labels using actual amounts
+  const pPct = v => Math.round((v / pay.monthly) * 100);
   new Chart(document.getElementById('paycheckChart'), {
     type: 'doughnut',
     data: {
-      labels: ['Needs (50%)', 'Debt (20%)', 'Retirement (10%)', 'Lifestyle (20%)'],
+      labels: [
+        `Needs (${pPct(pay.needs)}%)`,
+        `Debt (${pPct(pay.debt)}%)`,
+        `Retirement (${pPct(pay.retirement)}%)`,
+        `Lifestyle (${pPct(pay.lifestyle)}%)`,
+      ],
       datasets: [{ data: [pay.needs, pay.debt, pay.retirement, pay.lifestyle],
         backgroundColor: ['#4F46E5','#7C3AED','#059669','#D97706'], borderWidth: 0, hoverOffset: 6 }]
     },
@@ -540,8 +581,10 @@ async function loadOverview() {
   });
 
   document.getElementById('paycheck-legend').innerHTML = [
-    ['#4F46E5','Needs',fmt(pay.needs)], ['#7C3AED','Debt',fmt(pay.debt)],
-    ['#059669','Retirement',fmt(pay.retirement)], ['#D97706','Lifestyle',fmt(pay.lifestyle)],
+    ['#4F46E5', `Needs (${pPct(pay.needs)}%)`,       fmt(pay.needs)],
+    ['#7C3AED', `Debt (${pPct(pay.debt)}%)`,          fmt(pay.debt)],
+    ['#059669', `Retirement (${pPct(pay.retirement)}%)`, fmt(pay.retirement)],
+    ['#D97706', `Lifestyle (${pPct(pay.lifestyle)}%)`, fmt(pay.lifestyle)],
   ].map(([c,l,v]) => `<div class="d-flex justify-content-between align-items-center" style="margin-bottom:3px;">
     <div class="d-flex align-items-center gap-2"><div style="width:9px;height:9px;border-radius:2px;background:${c}"></div>
     <span style="font-size:.75rem;color:var(--muted)">${l}</span></div>
@@ -845,58 +888,76 @@ function checkCustomRent() {
 }
 
 // ── Roadmap ───────────────────────────────────────────────────────────────────
-const ROADMAP = [
-  { month: 1, title: 'Month 1 — Foundation', tasks: [
-    { id: 'm1t1', text: 'Open a checking account at a fee-free bank (Ally, SoFi, Schwab)' },
-    { id: 'm1t2', text: 'Set up direct deposit for your first paycheck' },
-    { id: 'm1t3', text: 'Enroll in employer health insurance within your 30-day window' },
-    { id: 'm1t4', text: 'Review and understand your pay stub (taxes, deductions, net pay)' },
-  ]},
-  { month: 2, title: 'Month 2 — Retirement', tasks: [
-    { id: 'm2t1', text: 'Contribute at least enough to your 401k to get the full employer match' },
-    { id: 'm2t2', text: 'Open a Roth IRA account (Fidelity or Vanguard)' },
-    { id: 'm2t3', text: 'Set up automatic monthly contribution to Roth IRA' },
-  ]},
-  { month: 3, title: 'Month 3 — Emergency Fund', tasks: [
-    { id: 'm3t1', text: 'Open a High-Yield Savings Account (HYSA) with 4%+ APY' },
-    { id: 'm3t2', text: 'Set up auto-transfer to HYSA every payday' },
-    { id: 'm3t3', text: 'Target: 1 month of expenses saved by end of month' },
-  ]},
-  { month: 4, title: 'Month 4 — Debt Strategy', tasks: [
-    { id: 'm4t1', text: 'Log in to your student loan servicer and confirm your repayment plan' },
-    { id: 'm4t2', text: 'Set up autopay (0.25% rate discount on federal loans)' },
-    { id: 'm4t3', text: 'Decide: Aggressive Payoff, Balanced, or Investor Path' },
-  ]},
-  { month: 6, title: 'Month 6 — Mid-Year Check', tasks: [
-    { id: 'm6t1', text: 'Review your budget — are you hitting your savings targets?' },
-    { id: 'm6t2', text: 'Emergency fund should be at 1.5+ months of expenses' },
-    { id: 'm6t3', text: 'Check your 401k allocation and rebalance if needed' },
-    { id: 'm6t4', text: 'Consider asking for a 6-month performance review' },
-  ]},
-  { month: 9, title: 'Month 9 — Optimize', tasks: [
-    { id: 'm9t1', text: 'Emergency fund at 2.5+ months — almost there' },
-    { id: 'm9t2', text: 'Review subscriptions and recurring expenses — cancel unused ones' },
-    { id: 'm9t3', text: 'Start tracking your net worth monthly (Monarch Money or spreadsheet)' },
-  ]},
-  { month: 12, title: 'Month 12 — Year One Complete', tasks: [
-    { id: 'm12t1', text: 'Emergency fund fully funded (3 months of expenses)' },
-    { id: 'm12t2', text: 'Calculate how much loan principal you\'ve paid down this year' },
-    { id: 'm12t3', text: 'Calculate your total Roth IRA + 401k balance' },
-    { id: 'm12t4', text: 'Request a raise — you now have a year of performance data' },
-    { id: 'm12t5', text: 'File your taxes (first year as a full-time employee)' },
-  ]},
-];
+function buildRoadmap(profile) {
+  const hasMatch  = profile && profile.employer_401k_match > 0;
+  const hasBonus  = profile && profile.signing_bonus > 0;
+  const hasLoan   = profile && profile.loan_balance > 0;
+  const bonusAmt  = hasBonus ? fmt(profile.signing_bonus) : '';
+
+  return [
+    { month: 1, title: 'Month 1 — Foundation', tasks: [
+      { id: 'm1t1', text: 'Open a checking account at a fee-free bank (Ally, SoFi, Schwab)' },
+      { id: 'm1t2', text: 'Set up direct deposit for your first paycheck' },
+      { id: 'm1t3', text: 'Enroll in employer health insurance within your 30-day window' },
+      { id: 'm1t4', text: 'Review your pay stub — understand gross vs. net and every deduction' },
+      ...(hasBonus ? [{ id: 'm1t5', text: `Deploy your ${bonusAmt} signing bonus: 50% to loans or emergency fund, 40% to HYSA, 10% for yourself` }] : []),
+    ]},
+    { month: 2, title: 'Month 2 — Retirement', tasks: [
+      ...(hasMatch
+        ? [{ id: 'm2t1', text: `Contribute at least ${profile.employer_401k_match}% to your 401k to capture the full employer match — that's free money` }]
+        : [{ id: 'm2t1', text: 'Enroll in your 401k and contribute what you can — even 3% makes a big difference over 30 years' }]),
+      { id: 'm2t2', text: 'Open a Roth IRA account at Fidelity or Vanguard (free, takes 10 minutes)' },
+      { id: 'm2t3', text: 'Set up an automatic monthly contribution to your Roth IRA' },
+    ]},
+    { month: 3, title: 'Month 3 — Emergency Fund', tasks: [
+      { id: 'm3t1', text: 'Open a High-Yield Savings Account (HYSA) earning 4%+ APY' },
+      { id: 'm3t2', text: 'Set up an auto-transfer to your HYSA every payday' },
+      { id: 'm3t3', text: 'Target: 1 month of expenses saved by end of this month' },
+    ]},
+    { month: 4, title: 'Month 4 — Debt Strategy', tasks: [
+      ...(hasLoan ? [
+        { id: 'm4t1', text: 'Log in to your student loan servicer and confirm your repayment plan and interest rate' },
+        { id: 'm4t2', text: 'Set up autopay — federal loans give a 0.25% interest rate discount automatically' },
+        { id: 'm4t3', text: 'Use the Life Paths tool to decide: Aggressive Payoff, Balanced, or Investor Path' },
+      ] : [
+        { id: 'm4t1', text: 'No student loans — great position. Focus on maxing Roth IRA ($7,000/yr limit)' },
+        { id: 'm4t2', text: 'Consider opening a taxable brokerage account for additional investing (Fidelity, Schwab)' },
+      ]),
+    ]},
+    { month: 6, title: 'Month 6 — Mid-Year Check', tasks: [
+      { id: 'm6t1', text: 'Log your numbers in Track Progress — check if your net worth is trending up' },
+      { id: 'm6t2', text: 'Emergency fund should be at 1.5+ months of expenses by now' },
+      ...(hasMatch ? [{ id: 'm6t3', text: 'Review your 401k investment allocation — avoid keeping everything in the default fund' }] : []),
+      { id: 'm6t4', text: 'Request a 6-month performance check-in with your manager' },
+    ]},
+    { month: 9, title: 'Month 9 — Optimize', tasks: [
+      { id: 'm9t1', text: 'Emergency fund should be at 2.5+ months — you\'re almost fully funded' },
+      { id: 'm9t2', text: 'Review all subscriptions and recurring expenses — cancel anything unused' },
+      { id: 'm9t3', text: 'Log your current loan balance and savings in Track Progress to see your full net worth growth since Month 1' },
+    ]},
+    { month: 12, title: 'Month 12 — Year One Complete', tasks: [
+      { id: 'm12t1', text: 'Emergency fund fully funded — 3 months of expenses in HYSA' },
+      ...(hasLoan ? [{ id: 'm12t2', text: 'Calculate how much loan principal you\'ve paid down this year (check Track Progress)' }] : []),
+      { id: 'm12t3', text: 'Calculate your total Roth IRA + 401k balance' },
+      { id: 'm12t4', text: 'Request a raise — you now have a full year of performance data' },
+      { id: 'm12t5', text: 'File your taxes — first year as a full-time employee, consider TurboTax or FreeTaxUSA' },
+    ]},
+  ];
+}
 
 let completedTasks = new Set();
+let roadmapProfile = null;
 
 async function loadRoadmap() {
-  const res = await fetch('/api/roadmap');
-  const data = await res.json();
+  const [rmRes, profRes] = await Promise.all([fetch('/api/roadmap'), fetch('/api/profile')]);
+  const data = await rmRes.json();
+  roadmapProfile = await profRes.json();
   completedTasks = new Set(data.completed || []);
   renderRoadmap();
 }
 
 function renderRoadmap() {
+  const ROADMAP = buildRoadmap(roadmapProfile);
   const total = ROADMAP.reduce((s, m) => s + m.tasks.length, 0);
   const done  = completedTasks.size;
   const pct   = Math.round((done / total) * 100);
@@ -926,26 +987,6 @@ async function toggleTask(taskId, el) {
   renderRoadmap();
 }
 
-// ── AI Advisor ────────────────────────────────────────────────────────────────
-async function loadAdvice() {
-  const res  = await fetch('/api/advice');
-  const list = await res.json();
-  const priorityColors = { high: ['rgba(79,70,229,.1)', '#4F46E5'], medium: ['rgba(217,119,6,.1)', '#D97706'] };
-
-  document.getElementById('advice-container').innerHTML = list.map(a => {
-    const [bg, color] = priorityColors[a.priority] || priorityColors.medium;
-    return `<div class="advice-card">
-      <div class="advice-icon" style="background:${bg};color:${color}"><i class="bi bi-${a.icon}"></i></div>
-      <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-          <span class="advice-title">${a.title}</span>
-          <span class="badge-pill badge-${a.priority}">${a.priority === 'high' ? 'Priority' : 'Suggested'}</span>
-        </div>
-        <p class="advice-body">${a.body}</p>
-      </div>
-    </div>`;
-  }).join('');
-}
 
 // ── 401k Analyzer ─────────────────────────────────────────────────────────────
 let chart401k = null;
@@ -1084,16 +1125,41 @@ function update401kSlider(val) { render401k(val); }
 // ── Track Progress ────────────────────────────────────────────────────────────
 let progressChart = null;
 
+async function saveGoal() {
+  const amount = parseFloat(document.getElementById('goal-amount').value) || 0;
+  const date   = document.getElementById('goal-date').value;
+  if (!amount || !date) { alert('Please enter both a target amount and date.'); return; }
+  await fetch('/api/savings-goal', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ amount, date }),
+  });
+  await renderProgress();
+}
+
 async function loadProgress() {
-  // Set today's date as default
   document.getElementById('snap-date').value = new Date().toISOString().slice(0, 10);
 
-  // Pre-fill loan from profile
+  // Pre-fill loan from most recent snapshot, falling back to profile
   try {
-    const pr = await fetch('/api/profile');
-    if (pr.ok) {
-      const p = await pr.json();
-      if (p && p.loan_balance) document.getElementById('snap-loan').value = p.loan_balance;
+    const [snapRes, profRes, goalRes] = await Promise.all([
+      fetch('/api/snapshots'), fetch('/api/profile'), fetch('/api/savings-goal')
+    ]);
+    const snaps = await snapRes.json();
+    const prof  = await profRes.json();
+    const goal  = await goalRes.json();
+
+    if (snaps.length > 0) {
+      const last = snaps[snaps.length - 1];
+      document.getElementById('snap-loan').value    = last.loan_balance;
+      document.getElementById('snap-savings').value = last.savings_balance;
+    } else if (prof && prof.loan_balance) {
+      document.getElementById('snap-loan').value = prof.loan_balance;
+    }
+
+    // Pre-fill goal fields if one exists
+    if (goal.amount > 0) {
+      document.getElementById('goal-amount').value = goal.amount;
+      document.getElementById('goal-date').value   = goal.date;
     }
   } catch {}
 
@@ -1114,10 +1180,57 @@ async function renderProgress() {
             <div style="font-size:.78rem;font-weight:600;color:var(--text);">${formatDate(s.date)}</div>
             <div style="font-size:.7rem;color:var(--muted);">Loan: ${fmt(s.loan_balance)} · Savings: ${fmt(s.savings_balance)}</div>
           </div>
-          <div style="font-size:.85rem;font-weight:800;color:${s.net_worth >= 0 ? '#059669' : '#DC2626'};">
-            ${s.net_worth >= 0 ? '+' : ''}${fmt(s.net_worth)}
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <div style="font-size:.85rem;font-weight:800;color:${s.net_worth >= 0 ? '#059669' : '#DC2626'};">
+              ${s.net_worth >= 0 ? '+' : ''}${fmt(s.net_worth)}
+            </div>
+            <button onclick="deleteSnapshot('${s.date}')" title="Delete entry"
+              style="background:none;border:none;padding:2px 4px;cursor:pointer;color:#94A3B8;font-size:.8rem;border-radius:4px;line-height:1;"
+              onmouseover="this.style.color='#DC2626'" onmouseout="this.style.color='#94A3B8'">
+              <i class="bi bi-trash3"></i>
+            </button>
           </div>
         </div>`).join('');
+
+  // Savings goal status
+  try {
+    const goalRes = await fetch('/api/savings-goal');
+    const goal    = await goalRes.json();
+    const goalEl  = document.getElementById('goal-status');
+
+    if (goal.amount > 0 && goal.date) {
+      const currentSavings = snaps.length > 0 ? snaps[snaps.length - 1].savings_balance : 0;
+      const goalDate       = new Date(goal.date + 'T00:00:00');
+      const today          = new Date();
+      const totalDays      = (goalDate - new Date(snaps.length > 0 ? snaps[0].date + 'T00:00:00' : today)) / 86400000;
+      const daysLeft       = Math.max(0, (goalDate - today) / 86400000);
+      const progress       = Math.min(100, Math.round((currentSavings / goal.amount) * 100));
+
+      // Daily rate needed to hit goal
+      const needed         = Math.max(0, goal.amount - currentSavings);
+      const dailyNeeded    = daysLeft > 0 ? needed / daysLeft : 0;
+      const monthlyNeeded  = Math.round(dailyNeeded * 30);
+      const onTrack        = currentSavings >= (goal.amount * (1 - daysLeft / Math.max(1, totalDays)));
+
+      const statusColor  = progress >= 100 ? '#059669' : onTrack ? '#4F46E5' : '#D97706';
+      const statusText   = progress >= 100 ? '🎉 Goal reached!' : onTrack ? 'On track' : 'Behind pace';
+      const statusIcon   = progress >= 100 ? 'trophy-fill' : onTrack ? 'check-circle-fill' : 'exclamation-circle-fill';
+
+      goalEl.innerHTML = `
+        <div style="margin-bottom:.75rem;background:${statusColor}10;border:1.5px solid ${statusColor}30;border-radius:10px;padding:.6rem .85rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
+            <span style="font-size:.78rem;font-weight:700;color:${statusColor};"><i class="bi bi-${statusIcon} me-1"></i>${statusText}</span>
+            <span style="font-size:.72rem;color:var(--muted);">${progress}% of ${fmt(goal.amount)}</span>
+          </div>
+          <div style="background:#E2E8F0;border-radius:20px;height:6px;">
+            <div style="background:${statusColor};border-radius:20px;height:6px;width:${progress}%;transition:width .6s;"></div>
+          </div>
+          ${progress < 100 ? `<div style="font-size:.7rem;color:var(--muted);margin-top:.35rem;">Need ~${fmt(monthlyNeeded)}/mo · ${Math.round(daysLeft)} days left</div>` : ''}
+        </div>`;
+    } else {
+      goalEl.innerHTML = '';
+    }
+  } catch {}
 
   // Progress stats (show if any data)
   if (snaps.length >= 1) {
@@ -1171,6 +1284,18 @@ async function renderProgress() {
       },
     },
   });
+}
+
+async function deleteSnapshot(date) {
+  if (!confirm(`Delete the entry for ${formatDate(date)}?`)) return;
+  try {
+    await fetch(`/api/snapshots/${date}`, { method: 'DELETE' });
+    await renderProgress();
+    // Also refresh overview stats since they depend on snapshots
+    loadOverview();
+  } catch {
+    alert('Could not delete. Please try again.');
+  }
 }
 
 async function saveSnapshot() {
@@ -1227,7 +1352,6 @@ function formatDate(iso) {
   load401k();
   loadProgress();
   loadRoadmap();
-  loadAdvice();
 })();
 </script>
 {% endblock %}

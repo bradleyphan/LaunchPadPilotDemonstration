@@ -196,11 +196,21 @@ body { display: flex; flex-direction: column; min-height: 100vh; background: var
       return;
     }
 
+    const monthly_rent   = parseFloat(document.getElementById('monthly_rent').value)   || 0;
+    const other_expenses = parseFloat(document.getElementById('other_expenses').value) || 0;
+    const totalExpenses  = monthly_rent + other_expenses;
+    const monthlyIncome  = salary / 12;
+
+    if (totalExpenses >= monthlyIncome) {
+      const box = document.getElementById('alert-box');
+      box.textContent = `Your total monthly expenses ($${Math.round(totalExpenses).toLocaleString()}) meet or exceed your monthly income ($${Math.round(monthlyIncome).toLocaleString()}). Please check your numbers.`;
+      box.className = 'show';
+      return;
+    }
+
     document.getElementById('btn-text').classList.add('d-none');
     document.getElementById('btn-spin').classList.remove('d-none');
 
-    const monthly_rent   = parseFloat(document.getElementById('monthly_rent').value)   || 0;
-    const other_expenses = parseFloat(document.getElementById('other_expenses').value) || 0;
     const payload = {
       salary:              salary,
       loan_balance:        parseFloat(document.getElementById('loan_balance').value) || 0,
