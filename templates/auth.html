@@ -2,29 +2,55 @@
 {% block title %}{% if mode == 'register' %}Create Account{% else %}Log In{% endif %} — LaunchPad Pilot{% endblock %}
 
 {% block styles %}
-body { display: flex; flex-direction: column; min-height: 100vh; }
+:root {
+  --ind:       #4F46E5;
+  --ind-dark:  #4338CA;
+  --ind-light: #EEF2FF;
+  --bg:        #F8FAFC;
+  --surface:   #FFFFFF;
+  --border:    #E2E8F0;
+  --text:      #0F172A;
+  --muted:     #64748B;
+}
+* { box-sizing: border-box; }
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+}
+.auth-topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: .9rem 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
 .auth-wrap {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: 2.5rem 1rem;
 }
 .auth-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
   border-radius: 20px;
   padding: 2.5rem;
   width: 100%;
   max-width: 420px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.07);
 }
-.auth-logo { font-size: 1.15rem; font-weight: 800; color: #fff; text-decoration: none; display: block; margin-bottom: 2rem; }
-.auth-logo span { color: var(--primary); }
-.auth-title { font-size: 1.6rem; font-weight: 800; letter-spacing: -.5px; margin-bottom: .35rem; }
+.auth-logo { font-size: 1.15rem; font-weight: 800; color: var(--text); text-decoration: none; display: block; margin-bottom: 2rem; }
+.auth-logo .accent { color: var(--ind); }
+.auth-title { font-size: 1.55rem; font-weight: 800; letter-spacing: -.5px; color: var(--text); margin-bottom: .35rem; }
 .auth-sub { font-size: .875rem; color: var(--muted); margin-bottom: 1.75rem; }
 .tab-switch {
   display: flex;
-  background: var(--bg-card-2);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   padding: 4px;
   margin-bottom: 1.75rem;
@@ -42,21 +68,68 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
   background: transparent;
   color: var(--muted);
 }
-.tab-btn.active { background: var(--bg-card); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
-#alert-box { display: none; border-radius: 8px; font-size: .83rem; font-weight: 500; padding: .65rem 1rem; margin-bottom: 1rem; }
+.tab-btn.active { background: var(--ind); color: #fff; box-shadow: 0 2px 8px rgba(79,70,229,.3); }
+.form-label { font-size: .83rem; font-weight: 600; color: var(--text); margin-bottom: .4rem; }
+.form-control {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: .88rem;
+  padding: .6rem .85rem;
+  transition: border-color .15s, box-shadow .15s;
+}
+.form-control::placeholder { color: #CBD5E1; }
+.form-control:focus {
+  background: var(--surface);
+  border-color: var(--ind);
+  color: var(--text);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.15);
+  outline: none;
+}
+.btn-auth {
+  width: 100%;
+  padding: .72rem;
+  border-radius: 10px;
+  border: none;
+  background: var(--ind);
+  color: #fff;
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: .2px;
+  cursor: pointer;
+  transition: background .15s, transform .15s, box-shadow .15s;
+  box-shadow: 0 4px 14px rgba(79,70,229,.35);
+}
+.btn-auth:hover { background: var(--ind-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(79,70,229,.4); }
+.btn-auth:active { transform: translateY(0); }
+#alert-box { display: none; border-radius: 10px; font-size: .83rem; font-weight: 500; padding: .7rem 1rem; margin-bottom: 1rem; }
 #alert-box.show { display: block; }
-.divider { text-align: center; font-size: .75rem; color: var(--muted); margin: 1.25rem 0; position: relative; }
-.divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border); }
-.divider::before { left: 0; }
-.divider::after { right: 0; }
-.auth-switch { font-size: .83rem; color: var(--muted); text-align: center; margin-top: 1.25rem; }
-.auth-switch a { color: var(--primary); text-decoration: none; font-weight: 600; }
+.auth-footer { font-size: .83rem; color: var(--muted); text-align: center; margin-top: 1.5rem; }
+.auth-footer a { color: var(--ind); text-decoration: none; font-weight: 600; }
+.auth-footer a:hover { text-decoration: underline; }
 {% endblock %}
 
 {% block body %}
+<!-- Topbar -->
+<div class="auth-topbar d-flex align-items-center justify-content-between">
+  <a href="/" class="auth-logo mb-0" style="margin-bottom:0 !important;">
+    <i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--ind)"></i>Launchpad<span class="accent">Pilot</span>
+  </a>
+  <a href="/" style="font-size:.83rem;color:var(--muted);text-decoration:none;font-weight:500;">
+    <i class="bi bi-arrow-left me-1"></i>Back to Home
+  </a>
+</div>
+
 <div class="auth-wrap">
   <div class="auth-card">
-    <a href="/" class="auth-logo"><i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--primary)"></i>Launchpad<span>Pilot</span></a>
+    <div class="text-center mb-4">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;background:var(--ind-light);border-radius:14px;margin-bottom:1rem;">
+        <i class="bi bi-rocket-takeoff-fill" style="font-size:1.4rem;color:var(--ind)"></i>
+      </div>
+      <h1 class="auth-title">{% if mode == 'register' %}Create your account{% else %}Welcome back{% endif %}</h1>
+      <p class="auth-sub">{% if mode == 'register' %}Start your financial journey today{% else %}Log in to your LaunchPad Pilot{% endif %}</p>
+    </div>
 
     <div class="tab-switch">
       <button class="tab-btn {% if mode == 'login' %}active{% endif %}" id="tab-login" onclick="switchTab('login')">Log In</button>
@@ -75,7 +148,7 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
         <label class="form-label">Password</label>
         <input type="password" class="form-control" id="login-password" placeholder="••••••••" />
       </div>
-      <button type="submit" class="btn btn-primary-grad w-100" style="padding:.7rem;border-radius:10px;">
+      <button type="submit" class="btn-auth">
         <span id="login-text"><i class="bi bi-box-arrow-in-right me-2"></i>Log In</span>
         <span id="login-spin" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Signing in…</span>
       </button>
@@ -95,11 +168,15 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
         <label class="form-label">Password <span style="color:var(--muted);font-weight:400;">(min 6 chars)</span></label>
         <input type="password" class="form-control" id="reg-password" placeholder="••••••••" />
       </div>
-      <button type="submit" class="btn btn-primary-grad w-100" style="padding:.7rem;border-radius:10px;">
+      <button type="submit" class="btn-auth">
         <span id="reg-text"><i class="bi bi-rocket-takeoff-fill me-2"></i>Create Account</span>
         <span id="reg-spin" class="d-none"><span class="spinner-border spinner-border-sm me-2"></span>Creating…</span>
       </button>
     </form>
+
+    <p class="auth-footer">
+      {% if mode == 'register' %}Already have an account? <a href="/login">Log In</a>{% else %}New here? <a href="/register">Create an account</a>{% endif %}
+    </p>
   </div>
 </div>
 {% endblock %}
@@ -119,8 +196,8 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
     el.textContent = msg;
     el.className = `show ${type === 'success' ? 'alert alert-success' : ''}`;
     el.style.cssText = type === 'error'
-      ? 'display:block;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;'
-      : 'display:block;background:rgba(36,161,72,.1);border:1px solid rgba(36,161,72,.3);color:#4ade80;';
+      ? 'display:block;background:rgba(220,38,38,.08);border:1.5px solid rgba(220,38,38,.25);color:#DC2626;border-radius:10px;'
+      : 'display:block;background:rgba(5,150,105,.08);border:1.5px solid rgba(5,150,105,.25);color:#059669;border-radius:10px;';
   }
 
   async function submitForm(url, payload, textEl, spinEl) {
